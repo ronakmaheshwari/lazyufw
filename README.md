@@ -1,15 +1,10 @@
-# lazyufw
+npm install -g lazyufw
 
-To install dependencies:
+# one-time, explicit privilege setup — user has to run this deliberately
+sudo lazyufw setup
 
-```bash
-bun install
-```
+# from then on, runs without a sudo password prompt for ufw specifically
+lazyufw
 
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.2.18. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+# to revoke later
+sudo lazyufw teardown

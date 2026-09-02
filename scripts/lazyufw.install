@@ -1,0 +1,8 @@
+# lazyufw.install
+post_install() {
+    bash /usr/share/lazyufw/scripts/install.sh
+}
+
+pre_remove() {
+    bash /usr/share/lazyufw/scripts/uninstall.sh
+}

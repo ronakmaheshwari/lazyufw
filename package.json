@@ -9,6 +9,10 @@
     "type": "git",
     "url": ""
   },
+  "scripts": {
+    "postinstall": "node scripts/install.sh || true",
+    "preuninstall": "node scripts/uninstall.sh || true"
+  },
   "version": "1.0.0",
   "devDependencies": {
     "@types/blessed": "^0.1.27",
