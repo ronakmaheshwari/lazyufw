@@ -1,5 +1,3 @@
-// import { runTui } from "../tui"; // your actual TUI entry point
-
 import { isSudoConfigured } from "./cli/checkSudo";
 import { setupSudo } from "./cli/setupSudo";
 import { teardownSudo } from "./cli/teardownSudo";

@@ -1,6 +1,7 @@
 import { UFW_PATH } from "../utils/config";
 import type { ExecResult } from "../utils/exec";
 import execute from "../utils/exec";
+import type { CreateRuleInput } from "./ufwTypes";
 
 const PORT_RE = /^\d{1,5}(:\d{1,5})?$/;
 const PROTO_RE = /^(tcp|udp)$/;
@@ -22,7 +23,7 @@ export class ufwClient {
     }
 
     async numberedRules(): Promise<ExecResult> {
-        return execute("sudo", [UFW_PATH, "status", "numbered"]);
+        return execute("sudo", ["-n", UFW_PATH, "status", "numbered"]);
     }
 
     async allow(port: string, protocol?: string): Promise<ExecResult> {
@@ -31,6 +32,14 @@ export class ufwClient {
         const args = [UFW_PATH, "allow", port];
         if (protocol) args.push(protocol);
         return execute("sudo", args);
+    }
+
+    async createRule(input: CreateRuleInput): Promise<ExecResult> {
+        const port = String(input.port);
+        if (!PORT_RE.test(port)) return invalid(`Invalid port: ${port}`);
+        return input.action === "allow"
+            ? this.allow(port, input.protocol)
+            : this.deny(port, input.protocol);
     }
 
     async deny(port: string, protocol?: string): Promise<ExecResult> {

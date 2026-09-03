@@ -22,4 +22,10 @@ interface UfwStatus {
   rules: UfwRule[];
 }
 
-export type {FirewallStatus, RuleAction, RuleDirection, UfwRule, UfwStatus}
+interface CreateRuleInput {
+    port: number;
+    protocol: "tcp" | "udp";
+    action: "allow" | "deny";
+}
+
+export type {FirewallStatus, RuleAction, RuleDirection, UfwRule, UfwStatus, CreateRuleInput}
