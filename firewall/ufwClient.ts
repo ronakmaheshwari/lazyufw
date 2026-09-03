@@ -75,3 +75,6 @@ export class ufwClient {
         return execute("sudo", [UFW_PATH, "--force", "reset"]);
     }
 }
+
+// Keep the conventional PascalCase name available to UI components.
+export const UfwClient = ufwClient;

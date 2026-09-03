@@ -3,6 +3,7 @@
 import { isSudoConfigured } from "./cli/checkSudo";
 import { setupSudo } from "./cli/setupSudo";
 import { teardownSudo } from "./cli/teardownSudo";
+import { startDashboard } from "./tui/dashboard";
 
 function printSetupPrompt(): void {
     console.log("");
@@ -17,7 +18,7 @@ function printSetupPrompt(): void {
     console.log("");
 }
 
-export function main(): void {
+export async function main(): Promise<void> {
     const [, , command] = process.argv;
 
     switch (command) {
@@ -31,8 +32,11 @@ export function main(): void {
             if (!isSudoConfigured()) {
                 printSetupPrompt();
             }
-            // runTui();
-            console.log("Starting lazyufw TUI... (wire this up to your actual TUI entry)");
+            await startDashboard();
             break;
     }
+}
+
+if (import.meta.main) {
+    await main();
 }
