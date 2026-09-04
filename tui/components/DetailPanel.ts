@@ -53,7 +53,7 @@ export class DetailPanel {
     const actionBadge = `{${color}-bg}{black-fg}{bold} ${rule.action} {/bold}{/black-fg}{/${color}-bg}`;
 
     const protocolMatch = /\/(\w+)$/.exec(rule.to);
-    const protocol = protocolMatch ? protocolMatch[1] : "any";
+    const protocol = protocolMatch?.[1] ?? "any";
     const portMatch = /^(\d+(?::\d+)?)/.exec(rule.to);
     const port = portMatch ? portMatch[1] : rule.to;
     const isV6 = rule.to.includes("(v6)") || rule.from.includes("(v6)");

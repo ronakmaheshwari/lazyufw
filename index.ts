@@ -28,7 +28,7 @@ function printHelp(): void {
       1, 2, 3, 4      Jump to Panel (Status, Rules, Raw, Details)
       Tab / Shift-Tab Cycle focus across panels
       x               Open Lazydocker Action Menu
-      a               Add rule (allow, deny, reject, limit)
+      a                (allow, deny, reject, limit)
       i               Insert rule at specific index
       d               Delete selected rule
       e               Enable UFW firewall

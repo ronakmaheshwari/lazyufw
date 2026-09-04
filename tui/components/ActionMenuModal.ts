@@ -19,23 +19,26 @@ export class ActionMenuModal implements Modal {
         private items: ActionMenuItem[],
         private onClose: () => void
     ) {
+        const itemCount = items.length;
+        const boxHeight = itemCount + 3; 
+
         this.base = new BaseModal(screen, {
             title: "Actions (Lazydocker Menu)",
-            width: "55%",
-            height: "60%"
+            width: "50%",
+            height: boxHeight
         });
         const box = this.base.box;
 
         const renderedItems = items.map(
-            item => `{bold}{cyan-fg}[${item.key}]{/cyan-fg} ${item.label.padEnd(26)}{/bold} {gray-fg}${item.description}{/gray-fg}`
+            item => `{bold}{cyan-fg}[${item.key}]{/cyan-fg} ${item.label.padEnd(20)}{/bold} {gray-fg}${item.description}{/gray-fg}`
         );
 
         this.list = blessed.list({
             parent: box,
-            top: 1,
+            top: 0,
             left: 1,
             width: "96%",
-            height: "82%",
+            height: itemCount,
             keys: true,
             vi: true,
             mouse: true,
@@ -49,7 +52,7 @@ export class ActionMenuModal implements Modal {
 
         blessed.box({
             parent: box,
-            bottom: 0,
+            top: itemCount,
             left: 2,
             width: "90%",
             height: 1,
@@ -64,7 +67,6 @@ export class ActionMenuModal implements Modal {
             if (chosen) void chosen.action();
         });
 
-        // Allow pressing the individual hotkey to immediately trigger the item!
         for (const item of items) {
             this.base.bindKey([item.key, item.key.toLowerCase(), item.key.toUpperCase()], () => {
                 this.onClose();

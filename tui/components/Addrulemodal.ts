@@ -27,46 +27,48 @@ export class AddRuleModal implements Modal {
     private screen: blessed.Widgets.Screen,
     private callbacks: AddRuleModalCallbacks
   ) {
-    this.base = new BaseModal(screen, { title: "Add Rule", width: "60%", height: "50%" });
+    this.base = new BaseModal(screen, { title: "Add Rule", width: "50%", height: 11 });
     const box = this.base.box;
 
-    blessed.box({ parent: box, top: 1, left: 2, width: 10, content: "Action:" });
+    blessed.box({ parent: box, top: 0, left: 2, width: 10, content: "Action:" });
     this.actionLabel = blessed.box({
       parent: box,
-      top: 1,
+      top: 0,
       left: 12,
       width: 20,
+      keys: true,
       content: this.formatChoice(ACTIONS, this.actionIndex),
       style: { fg: "cyan" }
     });
 
-    blessed.box({ parent: box, top: 3, left: 2, width: 10, content: "Port:" });
+    blessed.box({ parent: box, top: 1, left: 2, width: 10, content: "Port:" });
     this.portInput = blessed.textbox({
       parent: box,
-      top: 3,
+      top: 1,
       left: 12,
       width: "70%-14",
       height: 1,
-      inputOnFocus: true,
+      keys: true,
       style: { fg: "white", focus: { fg: "black", bg: "white" } }
     });
 
-    blessed.box({ parent: box, top: 5, left: 2, width: 10, content: "Protocol:" });
+    blessed.box({ parent: box, top: 2, left: 2, width: 10, content: "Protocol:" });
     this.protocolLabel = blessed.box({
       parent: box,
-      top: 5,
+      top: 2,
       left: 12,
       width: 20,
+      keys: true,
       content: this.formatChoice(PROTOCOLS, this.protocolIndex),
       style: { fg: "cyan" }
     });
 
     this.errorLine = blessed.box({
       parent: box,
-      top: 7,
+      top: 4,
       left: 2,
       width: "90%",
-      height: 2,
+      height: 1,
       content: "",
       tags: true,
       style: { fg: "red" }
@@ -74,10 +76,11 @@ export class AddRuleModal implements Modal {
 
     this.submitBtn = blessed.button({
       parent: box,
-      bottom: 1,
+      top: 6,
       left: 2,
       width: 12,
       height: 1,
+      keys: true,
       content: "[ Submit ]",
       align: "center",
       style: { fg: "green", focus: { fg: "black", bg: "green" } }
@@ -85,9 +88,9 @@ export class AddRuleModal implements Modal {
 
     blessed.box({
       parent: box,
-      bottom: 1,
+      top: 6,
       right: 2,
-      width: 30,
+      width: 26,
       height: 1,
       content: "Tab: next  Esc: cancel",
       style: { fg: "gray" }
@@ -103,22 +106,47 @@ export class AddRuleModal implements Modal {
   }
 
   private bindKeys(): void {
-    // Focus always sits on a child field, never on `box` itself, so these
-    // must be bound at the screen level or they silently never fire.
-    this.base.bindKey(["escape"], () => this.callbacks.onCancel());
-    this.base.bindKey(["tab"], () => this.moveFocus(1));
-    this.base.bindKey(["S-tab"], () => this.moveFocus(-1));
-    this.base.bindKey(["left"], () => this.cycleCurrentSelect(-1));
-    this.base.bindKey(["right"], () => this.cycleCurrentSelect(1));
-    this.base.bindKey(["enter"], () => {
-      const current = this.focusables[this.focusIndex];
-      if (current === this.submitBtn || current === this.actionLabel || current === this.protocolLabel) {
-        void this.trySubmit();
-      }
+    for (const widget of this.focusables) {
+      widget.key(["escape"], () => {
+        if (widget === this.portInput) this.portInput.cancel();
+        this.callbacks.onCancel();
+      });
+    }
+
+    this.actionLabel.key(["tab"], () => this.moveFocus(1));
+    this.actionLabel.key(["S-tab"], () => this.moveFocus(-1));
+    this.actionLabel.key(["left"], () => this.cycleCurrentSelect(-1));
+    this.actionLabel.key(["right"], () => this.cycleCurrentSelect(1));
+    this.actionLabel.key(["enter"], () => void this.trySubmit());
+
+    this.protocolLabel.key(["tab"], () => this.moveFocus(1));
+    this.protocolLabel.key(["S-tab"], () => this.moveFocus(-1));
+    this.protocolLabel.key(["left"], () => this.cycleCurrentSelect(-1));
+    this.protocolLabel.key(["right"], () => this.cycleCurrentSelect(1));
+    this.protocolLabel.key(["enter"], () => void this.trySubmit());
+
+    this.submitBtn.key(["tab"], () => this.moveFocus(1));
+    this.submitBtn.key(["S-tab"], () => this.moveFocus(-1));
+    this.submitBtn.key(["enter"], () => void this.trySubmit());
+    this.submitBtn.on("press", () => void this.trySubmit());
+
+    // The textbox needs its own reader stopped BEFORE focus moves away,
+    // or grabKeys stays true and every widget after it (including this
+    // one, on re-focus) stops receiving keys correctly.
+    this.portInput.key(["tab"], () => {
+      this.portInput.cancel();
+      this.moveFocus(1);
+    });
+    this.portInput.key(["S-tab"], () => {
+      this.portInput.cancel();
+      this.moveFocus(-1);
+    });
+    this.portInput.key(["enter"], () => {
+      this.portInput.submit();
+      void this.trySubmit();
     });
 
-    this.portInput.key(["enter"], () => void this.trySubmit());
-    this.submitBtn.on("press", () => void this.trySubmit());
+    this.base.bindKey(["escape"], () => this.callbacks.onCancel());
   }
 
   private cycleCurrentSelect(delta: number): void {
@@ -181,7 +209,11 @@ export class AddRuleModal implements Modal {
   }
 
   focus(): void {
-    this.focusables[this.focusIndex]!.focus();
+    const current = this.focusables[this.focusIndex]!;
+    current.focus();
+    if (current === this.portInput) {
+      this.portInput.readInput();
+    }
     this.screen.render();
   }
 }

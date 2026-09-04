@@ -23,7 +23,6 @@ export class ufwClient {
         if (res.code === 0 && res.stdout.trim()) {
             return res;
         }
-        // Fallback to verbose status if "status raw" is not implemented by the installed ufw version
         return execute("sudo", [UFW_PATH, "status", "verbose"]);
     }
 
@@ -133,6 +132,4 @@ export class ufwClient {
         return result;
     }
 }
-
-// Keep the conventional PascalCase name available to UI components.
 export const UfwClient = ufwClient;
