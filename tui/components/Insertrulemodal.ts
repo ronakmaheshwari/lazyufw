@@ -56,6 +56,7 @@ export class InsertRuleModal implements Modal {
       width: "90%",
       height: 2,
       content: "",
+      tags: true,
       style: { fg: "red" }
     });
 
@@ -72,6 +73,8 @@ export class InsertRuleModal implements Modal {
 
     this.focusables = [this.ruleInput, this.ipInput, this.submitBtn];
     this.bindKeys();
+    this.ruleInput.on("keypress", () => this.clearError());
+    this.ipInput.on("keypress", () => this.clearError());
   }
 
   private bindKeys(): void {
@@ -92,8 +95,12 @@ export class InsertRuleModal implements Modal {
   }
 
   private setError(message: string): void {
-    this.errorLine.setContent(message);
+    this.errorLine.setContent(message ? `{red-fg}✗ ${message}{/red-fg}` : "");
     this.screen.render();
+  }
+
+  private clearError(): void {
+    if (this.errorLine.getContent()) this.setError("");
   }
 
   private async trySubmit(): Promise<void> {

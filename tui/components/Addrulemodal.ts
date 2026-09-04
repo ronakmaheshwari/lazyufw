@@ -67,6 +67,7 @@ export class AddRuleModal implements Modal {
       width: "90%",
       height: 2,
       content: "",
+      tags: true,
       style: { fg: "red" }
     });
 
@@ -93,6 +94,7 @@ export class AddRuleModal implements Modal {
 
     this.focusables = [this.actionLabel, this.portInput, this.protocolLabel, this.submitBtn];
     this.bindKeys();
+    this.portInput.on("keypress", () => this.clearError());
   }
 
   private formatChoice<T extends string>(options: readonly T[], index: number): string {
@@ -137,8 +139,12 @@ export class AddRuleModal implements Modal {
   }
 
   private setError(message: string): void {
-    this.errorLine.setContent(message);
+    this.errorLine.setContent(message ? `{red-fg}✗ ${message}{/red-fg}` : "");
     this.screen.render();
+  }
+
+  private clearError(): void {
+    if (this.errorLine.getContent()) this.setError("");
   }
 
   private async trySubmit(): Promise<void> {

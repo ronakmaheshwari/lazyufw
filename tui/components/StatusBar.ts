@@ -1,6 +1,6 @@
 import blessed from "blessed";
 
-const DEFAULT_HINT = " ↑↓ Nav | a Add | i Insert | d Delete | u Toggle FW | l Toggle Log | r Refresh | ? Help | q Quit ";
+const DEFAULT_HINT = " Tab Focus | ↑↓ Nav | a Add | i Insert | d Delete | r Refresh | ? Help | q Quit ";
 const COPYRIGHT_LINE = "{gray-fg} © Ronak Maheshwari · {underline}https://github.com/ronakmaheshwari/lazyufw{/underline}{/gray-fg}";
 
 export function createHeader(): blessed.Widgets.BoxElement {
@@ -17,14 +17,19 @@ export function createHeader(): blessed.Widgets.BoxElement {
 export interface HeaderStatus {
     firewallActive: boolean;
     loggingOn: boolean;
+    ruleCount?: number;
     statusUnavailable?: boolean;
 }
 
 export function renderHeaderStatus(header: blessed.Widgets.BoxElement, status: HeaderStatus): void {
-    const line = status.statusUnavailable
-        ? "{red-fg}{bold}STATUS UNAVAILABLE{/bold}{/red-fg}"
-        : `ufw: ${status.firewallActive ? "{green-fg}active{/}" : "{red-fg}inactive{/}"}   log: ${status.loggingOn ? "on" : "off"}`;
-    header.setContent(`{bold}{cyan-fg}Lazy{/cyan-fg} UFW{/bold}\n${line}`);
+    if (status.statusUnavailable) {
+        header.setContent(`{bold}{cyan-fg}Lazy{/cyan-fg} UFW{/bold}\n{red-fg}{bold}STATUS UNAVAILABLE{/bold}{/red-fg}`);
+        return;
+    }
+    const fw = status.firewallActive ? "{green-fg}active{/}" : "{red-fg}inactive{/}";
+    const log = status.loggingOn ? "on" : "off";
+    const rules = status.ruleCount != null ? `   |   Rules: ${status.ruleCount}` : "";
+    header.setContent(`{bold}{cyan-fg}Lazy{/cyan-fg} UFW{/bold}\nufw: ${fw}   log: ${log}${rules}`);
 }
 
 export function createFooter(): blessed.Widgets.BoxElement {

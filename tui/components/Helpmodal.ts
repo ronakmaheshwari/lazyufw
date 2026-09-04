@@ -4,11 +4,12 @@ import type { Modal } from "../../firewall/ufwTypes";
 
 const HELP_TEXT = [
   "↑ / ↓        Navigate rules",
+  "Tab / S-Tab  Cycle focus between panels",
+  "1 / 2        Maximize Rules / Detail panel",
+  "Esc          Restore split view",
   "a            Add rule (allow/deny by port)",
   "i            Insert rule at position (allow from IP)",
   "d            Delete selected rule",
-  "u            Toggle firewall enable/disable",
-  "l            Toggle logging on/off",
   "r            Refresh",
   "?            Toggle this help",
   "q / Ctrl-C   Quit",
@@ -36,7 +37,7 @@ export class HelpModal implements Modal {
       height: "80%",
       content: HELP_TEXT
     });
-    this.base.box.key(["escape", "?", "q", "enter"], () => this.onClose());
+    this.base.bindKey(["escape", "?", "q", "enter"], () => this.onClose());
   }
 
   show(): void {
