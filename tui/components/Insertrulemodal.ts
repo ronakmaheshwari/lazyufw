@@ -75,14 +75,13 @@ export class InsertRuleModal implements Modal {
   }
 
   private bindKeys(): void {
-    const box = this.base.box;
-    box.key(["escape"], () => this.callbacks.onCancel());
-    box.key(["tab"], () => this.moveFocus(1));
-    box.key(["S-tab"], () => this.moveFocus(-1));
+    this.base.bindKey(["escape"], () => this.callbacks.onCancel());
+    this.base.bindKey(["tab"], () => this.moveFocus(1));
+    this.base.bindKey(["S-tab"], () => this.moveFocus(-1));
     this.ruleInput.key(["enter"], () => this.moveFocus(1));
     this.ipInput.key(["enter"], () => void this.trySubmit());
     this.submitBtn.on("press", () => void this.trySubmit());
-    box.key(["enter"], () => {
+    this.base.bindKey(["enter"], () => {
       if (this.focusables[this.focusIndex] === this.submitBtn) void this.trySubmit();
     });
   }

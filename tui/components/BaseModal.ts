@@ -8,8 +8,9 @@ export interface BaseModalOptions {
 
 export class BaseModal {
   readonly box: blessed.Widgets.BoxElement;
+  private readonly screenBindings: Array<{ keys: string[]; handler: () => void }> = [];
 
-  constructor(screen: blessed.Widgets.Screen, opts: BaseModalOptions) {
+  constructor(private readonly screen: blessed.Widgets.Screen, opts: BaseModalOptions) {
     this.box = blessed.box({
       parent: screen,
       label: ` ${opts.title} `,
@@ -27,12 +28,29 @@ export class BaseModal {
     });
   }
 
+  /**
+   * Modal chrome (Esc/Tab) can't be bound on `this.box` itself: blessed only
+   * emits "key <name>" on whichever element currently has focus, and focus
+   * always sits on a child field/button, not the box. Bind at the screen
+   * level instead and tear the listener down when the modal closes.
+   */
+  bindKey(keys: string[], handler: () => void): void {
+    this.screen.key(keys, handler);
+    this.screenBindings.push({ keys, handler });
+  }
+
   show(): void {
     this.box.show();
     this.box.setFront();
   }
 
   destroy(): void {
+    for (const { keys, handler } of this.screenBindings) {
+      for (const key of keys) {
+        this.screen.removeKey(key, handler);
+      }
+    }
+    this.screenBindings.length = 0;
     this.box.destroy();
   }
 }

@@ -2,7 +2,7 @@ import blessed from "blessed";
 import { RulesPanel } from "./components/RulesPanel";
 import { FocusManager } from "./components/Focusmanager";
 import type { ufwClient } from "../firewall/ufwClient";
-import { createFooter, createHeader, resetFooterHint, setFooterHint } from "./components/StatusBar";
+import { createFooter, createHeader, renderHeaderStatus, resetFooterHint, setFooterHint } from "./components/StatusBar";
 import { parseRules } from "../firewall/ufwParser";
 import { AddRuleModal } from "./components/Addrulemodal";
 import { InsertRuleModal } from "./components/Insertrulemodal";
@@ -16,28 +16,27 @@ export class Dashboard {
   private footer: blessed.Widgets.BoxElement;
   private rulesPanel: RulesPanel;
   private focusManager: FocusManager;
-  private statusBox: blessed.Widgets.BoxElement;
+  private transientMessage = "";
+  private transientTimer: ReturnType<typeof setTimeout> | null = null;
   private firewallActive = false;
   private loggingOn = false;
+  private statusUnavailable = false;
 
   constructor(private client: ufwClient) {
-    this.screen = blessed.screen({ smartCSR: true, title: "UFW TUI" });
+    this.screen = blessed.screen({
+      smartCSR: true,
+      title: "UFW TUI",
+      // Without this, a focused textbox (Add/Insert modal) grabs every
+      // keypress via blessed's grabKeys mode and Escape/Tab never reach
+      // any handler until the textbox itself is done reading input.
+      ignoreLocked: ["escape", "tab", "S-tab", "C-c"]
+    });
     this.header = createHeader();
     this.footer = createFooter();
     this.rulesPanel = new RulesPanel();
     this.focusManager = new FocusManager(this.screen);
 
-    this.statusBox = blessed.box({
-      top: 1,
-      right: 2,
-      width: 40,
-      height: 1,
-      content: "",
-      style: { fg: "gray" }
-    });
-
     this.screen.append(this.header);
-    this.header.append(this.statusBox);
     this.screen.append(this.rulesPanel.widget);
     this.screen.append(this.footer);
 
@@ -63,29 +62,46 @@ export class Dashboard {
   }
 
   private setTransientMessage(message: string, ttlMs = 2500): void {
-    this.statusBox.setContent(message);
-    this.screen.render();
+    this.transientMessage = message;
+    this.renderFooterStatus();
+    if (this.transientTimer) clearTimeout(this.transientTimer);
     if (ttlMs > 0) {
-      setTimeout(() => {
-        this.renderPersistentStatus();
+      this.transientTimer = setTimeout(() => {
+        this.transientMessage = "";
+        this.transientTimer = null;
+        this.renderFooterStatus();
       }, ttlMs);
     }
   }
 
-  private renderPersistentStatus(): void {
-    const fw = this.firewallActive ? "{green-fg}active{/}" : "{red-fg}inactive{/}";
-    const log = this.loggingOn ? "on" : "off";
-    this.statusBox.setContent(`ufw: ${this.firewallActive ? "active" : "inactive"}  log: ${log}`);
-    this.statusBox.style.fg = this.firewallActive ? "green" : "red";
+  private renderFooterStatus(): void {
+    if (this.focusManager.isModalOpen) return;
+    if (this.transientMessage) {
+      setFooterHint(this.footer, this.transientMessage);
+    } else {
+      resetFooterHint(this.footer);
+    }
     this.screen.render();
+  }
+
+  private renderHeader(): void {
+    renderHeaderStatus(this.header, {
+      firewallActive: this.firewallActive,
+      loggingOn: this.loggingOn,
+      statusUnavailable: this.statusUnavailable
+    });
   }
 
   private async refreshStatus(): Promise<void> {
     const result = await this.client.status();
-    const text = result.stdout;
-    this.firewallActive = /status:\s*active/i.test(text);
-    this.loggingOn = /logging:\s*on/i.test(text);
-    this.renderPersistentStatus();
+    if (result.code !== 0) {
+      this.statusUnavailable = true;
+    } else {
+      this.statusUnavailable = false;
+      this.firewallActive = /status:\s*active/i.test(result.stdout);
+      this.loggingOn = /logging:\s*on/i.test(result.stdout);
+    }
+    this.renderHeader();
   }
 
   async refresh(): Promise<void> {

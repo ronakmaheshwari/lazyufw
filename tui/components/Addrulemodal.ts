@@ -100,14 +100,14 @@ export class AddRuleModal implements Modal {
   }
 
   private bindKeys(): void {
-    const box = this.base.box;
-
-    box.key(["escape"], () => this.callbacks.onCancel());
-    box.key(["tab"], () => this.moveFocus(1));
-    box.key(["S-tab"], () => this.moveFocus(-1));
-    box.key(["left"], () => this.cycleCurrentSelect(-1));
-    box.key(["right"], () => this.cycleCurrentSelect(1));
-    box.key(["enter"], () => {
+    // Focus always sits on a child field, never on `box` itself, so these
+    // must be bound at the screen level or they silently never fire.
+    this.base.bindKey(["escape"], () => this.callbacks.onCancel());
+    this.base.bindKey(["tab"], () => this.moveFocus(1));
+    this.base.bindKey(["S-tab"], () => this.moveFocus(-1));
+    this.base.bindKey(["left"], () => this.cycleCurrentSelect(-1));
+    this.base.bindKey(["right"], () => this.cycleCurrentSelect(1));
+    this.base.bindKey(["enter"], () => {
       const current = this.focusables[this.focusIndex];
       if (current === this.submitBtn || current === this.actionLabel || current === this.protocolLabel) {
         void this.trySubmit();
