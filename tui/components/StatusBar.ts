@@ -1,6 +1,9 @@
 import blessed from "blessed";
 import type { UfwStatus } from "../../firewall/ufwTypes";
 
+const DEFAULT_HINT = " ↑↓ Nav | a Add | i Insert | d Delete | u Toggle FW | l Toggle Log | r Refresh | ? Help | q Quit ";
+ 
+
 export function createHeader(): blessed.Widgets.BoxElement {
     return blessed.box({
         top: 0, left: 0, width: "100%", height: 4,
@@ -27,7 +30,7 @@ export function renderHeaderStatus(header: blessed.Widgets.BoxElement, status: O
 
 export function createFooter(): blessed.Widgets.BoxElement {
     return blessed.box({
-        bottom: 0, left: 0, width: "100%", height: 4,
+        bottom: 0, left: 0, width: "100%", height: 3,
         border: { type: "line" },
         tags: true,
         style: { border: { fg: "gray" } }
@@ -36,7 +39,15 @@ export function createFooter(): blessed.Widgets.BoxElement {
 
 export function setStatus(footer: blessed.Widgets.BoxElement, message: string): void {
     footer.setContent(
-        ` {green-fg}{bold}Tab{/}{/} switch  {green-fg}{bold}↑↓{/} nav  {green-fg}{bold}a{/} add  {green-fg}{bold}d{/} delete  {green-fg}{bold}r{/} refresh  {green-fg}{bold}q{/} quit   {gray-fg}|{/}  ${message}\n` +
+        ` {green-fg}{bold}Tab{/}{/} switch  {green-fg}{bold}↑↓{/} nav  {green-fg}{bold}a{/} add  {green-fg}{bold}d{/} delete  {green-fg}{bold}r{/} refresh  {green-fg}{bold}q{/} quit   {gray-fg}|{/} {green-fg}{bold}?{/} help {gray-fg}|{/} ${message}\n` +
         `{gray-fg} © Ronak Maheshwari · {underline}https://github.com/ronakmaheshwari/lazyufw{/underline}{/gray-fg}`
     );
+}
+
+export function setFooterHint(footer: blessed.Widgets.BoxElement, text: string): void {
+  footer.setContent(` ${text} `);
+}
+
+export function resetFooterHint(footer: blessed.Widgets.BoxElement): void {
+  footer.setContent(DEFAULT_HINT);
 }

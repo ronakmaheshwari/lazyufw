@@ -83,6 +83,14 @@ export class ufwClient {
     async reset(): Promise<ExecResult> {
         return execute("sudo", [UFW_PATH, "--force", "reset"]);
     }
+
+    async assertOk (promise: Promise<ExecResult>): Promise<ExecResult> {
+        const result = await promise;
+        if (result.code !== 0) {
+            throw new Error(result.stderr.trim() || `Command failed with exit code ${result.code}`);
+        }
+        return result;
+    }
 }
 
 // Keep the conventional PascalCase name available to UI components.

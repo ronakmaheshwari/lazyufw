@@ -23,9 +23,20 @@ interface UfwStatus {
 }
 
 interface CreateRuleInput {
-    port: number;
-    protocol: "tcp" | "udp";
-    action: "allow" | "deny";
+  action: "allow" | "deny";
+  port: number | string;
+  protocol?: string;
+}
+ 
+interface InsertRuleInput {
+  rule: number;
+  ipAddr: string;
 }
 
-export type {FirewallStatus, RuleAction, RuleDirection, UfwRule, UfwStatus, CreateRuleInput}
+interface Modal {
+  show(): void;
+  destroy(): void;
+  focus(): void;
+}
+
+export type {FirewallStatus, RuleAction, RuleDirection, UfwRule, UfwStatus, CreateRuleInput, InsertRuleInput, Modal}
