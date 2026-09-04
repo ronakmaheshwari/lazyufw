@@ -7,7 +7,7 @@ import { parseRules } from "../firewall/ufwParser";
 import { AddRuleModal } from "./components/Addrulemodal";
 import { InsertRuleModal } from "./components/Insertrulemodal";
 import { ConfirmModal } from "./components/Confirmmodal";
-import { HelpModal } from "./components/ Helpmodal";
+import { HelpModal } from "./components/Helpmodal";
 import { ensureSudoCached } from "../cli/checkSudo";
 
 export class Dashboard {

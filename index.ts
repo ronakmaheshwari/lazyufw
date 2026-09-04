@@ -2,6 +2,7 @@ import { isSudoConfigured } from "./cli/checkSudo";
 import { setupSudo } from "./cli/setupSudo";
 import { teardownSudo } from "./cli/teardownSudo";
 import { startDashboard } from "./tui/dashboard";
+import { ufwClient } from "./firewall/ufwClient";
 
 function printSetupPrompt(): void {
     console.log("");
@@ -30,7 +31,7 @@ export async function main(): Promise<void> {
             if (!isSudoConfigured()) {
                 printSetupPrompt();
             }
-            await startDashboard();
+            await startDashboard(new ufwClient());
             break;
     }
 }
