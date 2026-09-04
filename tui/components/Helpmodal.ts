@@ -3,23 +3,34 @@ import { BaseModal } from "./BaseModal";
 import type { Modal } from "../../firewall/ufwTypes";
 
 const HELP_TEXT = [
-  "↑ / ↓        Navigate rules",
-  "Tab / S-Tab  Cycle focus between panels",
-  "1 / 2        Maximize Rules / Detail panel",
-  "Esc          Restore split view",
-  "a            Add rule (allow/deny by port)",
-  "i            Insert rule at position (allow from IP)",
-  "d            Delete selected rule",
-  "r            Refresh",
-  "?            Toggle this help",
-  "q / Ctrl-C   Quit",
+  "{bold}{cyan-fg}Navigation & Layout:{/cyan-fg}{/bold}",
+  "  1 / 2 / 3 / 4     Jump to Panel (Status / Rules / Raw / Detail)",
+  "  Tab / Shift-Tab   Cycle focus forward / backward between panels",
+  "  Esc               Restore normal split layout from maximized view",
+  "  x                 Open Lazydocker Actions Menu",
   "",
-  "Inside a modal:",
-  "Tab / Shift-Tab   Move between fields",
-  "← / →             Change a selected option",
-  "Enter             Confirm / submit",
-  "Esc               Cancel"
+  "{bold}{cyan-fg}Firewall Management Actions:{/cyan-fg}{/bold}",
+  "  a                 Add firewall rule (allow, deny, reject, limit)",
+  "  i                 Insert rule at specific position",
+  "  d                 Delete currently selected rule",
+  "  e                 Enable UFW firewall (ufw --force enable)",
+  "  D                 Disable UFW firewall (with SSH Lockout Protection)",
+  "  l                 Toggle UFW logging (on / off)",
+  "  R                 Reset UFW firewall (factory reset rules)",
+  "  r                 Refresh firewall status and rules",
+  "  s                 Configure passwordless sudo (one-time setup)",
+  "",
+  "{bold}{cyan-fg}General:{/cyan-fg}{/bold}",
+  "  ?                 Toggle this help dialog",
+  "  q / Ctrl-C        Quit lazyufw",
+  "",
+  "{bold}{cyan-fg}Inside Dialogs / Modals:{/cyan-fg}{/bold}",
+  "  Tab / Shift-Tab   Switch between fields and buttons",
+  "  ← / →             Cycle selection values (allow/deny/protocol)",
+  "  Enter             Submit form or trigger focused button",
+  "  Esc               Close / Cancel"
 ].join("\n");
+
 
 export class HelpModal implements Modal {
   private base: BaseModal;

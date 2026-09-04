@@ -1,6 +1,6 @@
 import type blessed from "blessed";
 
-export type PanelId = "rules" | "detail";
+export type PanelId = "status" | "rules" | "raw" | "detail";
 
 export interface PanelHandle {
     id: PanelId;
@@ -9,8 +9,7 @@ export interface PanelHandle {
 }
 
 /**
- * Owns the split/maximize layout math for the two-panel dashboard so
- * dashboard.ts doesn't hand-roll percentage strings for every toggle.
+ * Manages the Lazydocker-style 4-panel dashboard layout and full-screen maximization.
  */
 export class LayoutManager {
     private maximized: PanelId | null = null;
@@ -27,31 +26,55 @@ export class LayoutManager {
     }
 
     apply(): void {
+        const status = this.find("status");
         const rules = this.find("rules");
+        const raw = this.find("raw");
         const detail = this.find("detail");
+
         const setLabel = (panel: PanelHandle, suffix: string) =>
             (panel.widget as unknown as { setLabel(label: string): void }).setLabel(` ${panel.baseLabel}${suffix} `);
 
-        if (this.maximized === "rules") {
-            rules.widget.width = "100%";
-            rules.widget.left = 0;
-            detail.widget.hide();
-            rules.widget.show();
-            setLabel(rules, " [max]");
-        } else if (this.maximized === "detail") {
-            detail.widget.width = "100%";
-            detail.widget.left = 0;
-            rules.widget.hide();
-            detail.widget.show();
-            setLabel(detail, " [max]");
+        if (this.maximized) {
+            for (const p of this.panels) {
+                if (p.id === this.maximized) {
+                    p.widget.top = 3;
+                    p.widget.left = 0;
+                    p.widget.width = "100%";
+                    p.widget.height = "100%-6";
+                    p.widget.show();
+                    setLabel(p, " [max]");
+                } else {
+                    p.widget.hide();
+                }
+            }
         } else {
-            rules.widget.width = "70%";
+            // Restore default Lazydocker 4-panel split
+            status.widget.top = 3;
+            status.widget.left = 0;
+            status.widget.width = "35%";
+            status.widget.height = "28%";
+            status.widget.show();
+            setLabel(status, "");
+
+            rules.widget.top = "31%";
             rules.widget.left = 0;
-            detail.widget.width = "30%";
-            detail.widget.left = "70%";
+            rules.widget.width = "35%";
+            rules.widget.height = "44%";
             rules.widget.show();
-            detail.widget.show();
             setLabel(rules, "");
+
+            raw.widget.top = "75%";
+            raw.widget.left = 0;
+            raw.widget.width = "35%";
+            raw.widget.height = "100%-78";
+            raw.widget.show();
+            setLabel(raw, "");
+
+            detail.widget.top = 3;
+            detail.widget.left = "35%";
+            detail.widget.width = "65%";
+            detail.widget.height = "100%-6";
+            detail.widget.show();
             setLabel(detail, "");
         }
         this.screen.render();

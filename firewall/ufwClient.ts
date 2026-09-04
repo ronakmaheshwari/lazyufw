@@ -19,48 +19,89 @@ export class ufwClient {
     }
 
     async rawRules(): Promise<ExecResult> {
-        return execute("sudo", [UFW_PATH, "status", "raw"]);
+        const res = await execute("sudo", [UFW_PATH, "status", "raw"]);
+        if (res.code === 0 && res.stdout.trim()) {
+            return res;
+        }
+        // Fallback to verbose status if "status raw" is not implemented by the installed ufw version
+        return execute("sudo", [UFW_PATH, "status", "verbose"]);
     }
 
     async numberedRules(): Promise<ExecResult> {
-        return execute("sudo", ["-n", UFW_PATH, "status", "numbered"]);
+        return execute("sudo", [UFW_PATH, "status", "numbered"]);
     }
 
     async allow(port: string, protocol?: string): Promise<ExecResult> {
         if (!PORT_RE.test(port)) return invalid(`Invalid port: ${port}`);
         if (protocol && !PROTO_RE.test(protocol)) return invalid(`Invalid protocol: ${protocol}`);
         const args = [UFW_PATH, "allow", port];
-        if (protocol) args.push(protocol);
+        if (protocol && protocol !== "any") args.push(protocol);
         return execute("sudo", args);
-    }
-
-    async createRule(input: CreateRuleInput): Promise<ExecResult> {
-        const port = String(input.port);
-        if (!PORT_RE.test(port)) return invalid(`Invalid port: ${port}`);
-        return input.action === "allow"
-            ? this.allow(port, input.protocol)
-            : this.deny(port, input.protocol);
     }
 
     async deny(port: string, protocol?: string): Promise<ExecResult> {
         if (!PORT_RE.test(port)) return invalid(`Invalid port: ${port}`);
         if (protocol && !PROTO_RE.test(protocol)) return invalid(`Invalid protocol: ${protocol}`);
         const args = [UFW_PATH, "deny", port];
-        if (protocol) args.push(protocol);
+        if (protocol && protocol !== "any") args.push(protocol);
         return execute("sudo", args);
     }
 
-    async insertRule(rule: number, ipAddr: string): Promise<ExecResult> {
+    async reject(port: string, protocol?: string): Promise<ExecResult> {
+        if (!PORT_RE.test(port)) return invalid(`Invalid port: ${port}`);
+        if (protocol && !PROTO_RE.test(protocol)) return invalid(`Invalid protocol: ${protocol}`);
+        const args = [UFW_PATH, "reject", port];
+        if (protocol && protocol !== "any") args.push(protocol);
+        return execute("sudo", args);
+    }
+
+    async limit(port: string, protocol?: string): Promise<ExecResult> {
+        if (!PORT_RE.test(port)) return invalid(`Invalid port: ${port}`);
+        if (protocol && !PROTO_RE.test(protocol)) return invalid(`Invalid protocol: ${protocol}`);
+        const args = [UFW_PATH, "limit", port];
+        if (protocol && protocol !== "any") args.push(protocol);
+        return execute("sudo", args);
+    }
+
+    async createRule(input: CreateRuleInput): Promise<ExecResult> {
+        const port = String(input.port).trim();
+        if (!PORT_RE.test(port)) return invalid(`Invalid port: ${port}`);
+        const proto = input.protocol && input.protocol !== "any" ? input.protocol : undefined;
+        if (proto && !PROTO_RE.test(proto)) return invalid(`Invalid protocol: ${proto}`);
+
+        const action = input.action.toLowerCase();
+        const args = [UFW_PATH, action];
+
+        if (input.direction) {
+            args.push(input.direction.toLowerCase());
+        }
+
+        if (input.from && input.from.trim()) {
+            args.push("from", input.from.trim(), "to", "any", "port", port);
+        } else {
+            args.push(proto ? `${port}/${proto}` : port);
+        }
+
+        if (input.comment && input.comment.trim()) {
+            args.push("comment", input.comment.trim());
+        }
+
+        return execute("sudo", args);
+    }
+
+    async insertRule(rule: number, ipAddr: string, action = "allow"): Promise<ExecResult> {
         if (!Number.isInteger(rule) || rule < 1) return invalid(`Invalid rule number: ${rule}`);
-        if (!IPV4_RE.test(ipAddr)) return invalid(`Invalid IP address: ${ipAddr}`);
-        return execute("sudo", [UFW_PATH, "insert", rule.toString(), "allow", "from", ipAddr]);
+        const trimmedIp = ipAddr.trim();
+        if (!IPV4_RE.test(trimmedIp)) return invalid(`Invalid IP address: ${trimmedIp}`);
+        return execute("sudo", [UFW_PATH, "insert", rule.toString(), action.toLowerCase(), "from", trimmedIp]);
     }
 
     async deleteRule(rule: string): Promise<ExecResult> {
-        if (!DELETE_RULE_RE.test(rule.trim())) return invalid(`Invalid rule: ${rule}`);
-        const args = RULE_NUM_RE.test(rule.trim())
-            ? [UFW_PATH, "delete", rule.trim()]
-            : [UFW_PATH, "delete", ...rule.trim().split(/\s+/)];
+        const trimmed = rule.trim();
+        if (!DELETE_RULE_RE.test(trimmed)) return invalid(`Invalid rule: ${rule}`);
+        const args = RULE_NUM_RE.test(trimmed)
+            ? [UFW_PATH, "--force", "delete", trimmed]
+            : [UFW_PATH, "--force", "delete", ...trimmed.split(/\s+/)];
         return execute("sudo", args);
     }
 
@@ -84,7 +125,7 @@ export class ufwClient {
         return execute("sudo", [UFW_PATH, "--force", "reset"]);
     }
 
-    async assertOk (promise: Promise<ExecResult>): Promise<ExecResult> {
+    async assertOk(promise: Promise<ExecResult>): Promise<ExecResult> {
         const result = await promise;
         if (result.code !== 0) {
             throw new Error(result.stderr.trim() || `Command failed with exit code ${result.code}`);

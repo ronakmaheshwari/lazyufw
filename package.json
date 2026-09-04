@@ -1,31 +1,51 @@
 {
   "name": "lazyufw",
-  "description": "The lazier way to manage everything of ufw",
-  "module": "index.ts",
+  "version": "1.0.0",
+  "description": "The lazier way to manage UFW firewall — Lazydocker-style terminal UI with SSH protection and sudoless setup",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "bin": {
+    "lazyufw": "./dist/index.js"
+  },
   "type": "module",
-  "private": true,
+  "files": [
+    "dist",
+    "scripts",
+    "README.md",
+    "LICENSE"
+  ],
   "author": "ronakmaheshwari",
-  "repository": {
-    "type": "git",
-    "url": ""
+  "license": "MIT",
+  "keywords": [
+    "ufw",
+    "firewall",
+    "tui",
+    "terminal",
+    "lazydocker",
+    "cli",
+    "linux",
+    "security",
+    "ssh"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
   },
   "scripts": {
-    "postinstall": "node scripts/install.sh || true",
-    "preuninstall": "node scripts/uninstall.sh || true"
+    "build": "tsup",
+    "prepublishOnly": "npm run build",
+    "test": "bun test",
+    "start": "node dist/index.js"
   },
-  "version": "1.0.0",
   "devDependencies": {
     "@types/blessed": "^0.1.27",
     "@types/bun": "latest",
     "@types/node": "^26.4.1",
-    "tsup": "^8.5.1"
-  },
-  "peerDependencies": {
-    "typescript": "^7.0.2"
+    "tsup": "^8.5.1",
+    "typescript": "^5.0.0"
   },
   "dependencies": {
     "blessed": "^0.1.81",
     "commander": "^15.0.0",
-    "zod": "^4.5.4"
+    "zod": "^3.22.4"
   }
 }

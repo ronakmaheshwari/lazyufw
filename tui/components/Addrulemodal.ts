@@ -2,8 +2,9 @@ import blessed from "blessed";
 import type { CreateRuleInput, Modal } from "../../firewall/ufwTypes";
 import { BaseModal } from "./BaseModal";
 
-const ACTIONS: Array<CreateRuleInput["action"]> = ["allow", "deny"];
+const ACTIONS: Array<CreateRuleInput["action"]> = ["allow", "deny", "reject", "limit"];
 const PROTOCOLS = ["any", "tcp", "udp"] as const;
+
 
 export interface AddRuleModalCallbacks {
   onSubmit(input: CreateRuleInput): Promise<void> | void;

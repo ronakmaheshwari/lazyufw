@@ -1,26 +1,41 @@
 import { writeFileSync, chmodSync, existsSync, unlinkSync } from "node:fs";
-import { execFileSync } from "node:child_process";
-import { SUDOERS_FILE, UFW_PATH } from "../utils/config";
+import { execFileSync, spawnSync } from "node:child_process";
+import { SUDOERS_FILE, getUfwPath } from "../utils/config";
 
 export function setupSudo(): void {
+    if (process.platform !== "linux") {
+        console.warn("lazyufw: UFW and sudoers configuration are designed for Linux systems.");
+    }
+
+    // Auto-escalate with sudo if invoked as regular user
     if (process.getuid && process.getuid() !== 0) {
-        console.error("This command must be run with sudo: sudo lazyufw setup");
-        process.exit(1);
+        console.log("lazyufw: Sudoers configuration requires root. Re-running with sudo...");
+        const res = spawnSync("sudo", [process.execPath, ...process.argv.slice(1)], {
+            stdio: "inherit"
+        });
+        if (res.status !== 0) {
+            console.error("Sudo authentication cancelled or failed. Run: sudo lazyufw setup");
+            process.exit(res.status ?? 1);
+        }
+        return;
     }
 
-    const targetUser = process.env.SUDO_USER;
-    if (!targetUser) {
-        console.error(
-            "Could not determine the original user (SUDO_USER not set). " +
-            "Run this via 'sudo lazyufw setup', not as the root user directly."
-        );
-        process.exit(1);
+    const targetUser = process.env.SUDO_USER || process.env.USER;
+    if (!targetUser || targetUser === "root") {
+        console.log("lazyufw: Currently running as root. Passwordless sudo drop-in is not required for root.");
+        return;
     }
 
-    const line = `${targetUser} ALL=(root) NOPASSWD: ${UFW_PATH}\n`;
+    const ufwPath = getUfwPath();
+    const line = `${targetUser} ALL=(root) NOPASSWD: ${ufwPath}\n`;
 
-    writeFileSync(SUDOERS_FILE, line, { mode: 0o440 });
-    chmodSync(SUDOERS_FILE, 0o440);
+    try {
+        writeFileSync(SUDOERS_FILE, line, { mode: 0o440 });
+        chmodSync(SUDOERS_FILE, 0o440);
+    } catch (err) {
+        console.error(`Failed to write sudoers file at ${SUDOERS_FILE}:`, err);
+        process.exit(1);
+    }
 
     try {
         execFileSync("visudo", ["-c", "-f", SUDOERS_FILE]);
@@ -28,10 +43,10 @@ export function setupSudo(): void {
         if (existsSync(SUDOERS_FILE)) {
             unlinkSync(SUDOERS_FILE);
         }
-        console.error("Generated sudoers rule failed validation. No changes made.");
+        console.error("Generated sudoers rule failed validation (visudo). No changes were made.");
         process.exit(1);
     }
 
-    console.log(`lazyufw: passwordless sudo enabled for '${targetUser}' on ${UFW_PATH}`);
-    console.log(`lazyufw: you can now run 'lazyufw' without a sudo password each time`);
+    console.log(`\n  ✅ lazyufw: passwordless sudo enabled for '${targetUser}' on ${ufwPath}`);
+    console.log(`  You can now run 'lazyufw' freely without password prompts!\n`);
 }

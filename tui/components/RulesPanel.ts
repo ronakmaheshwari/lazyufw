@@ -3,9 +3,9 @@ import type { UfwRule } from "../../firewall/ufwTypes";
 import { theme, focusable } from "../theme";
 import { truncate } from "../format";
 
-const COLUMN_WIDTH = 24;
 const EMPTY_MESSAGE = "{gray-fg}No rules configured. Press 'a' to add one.{/gray-fg}";
 const LOADING_MESSAGE = "{gray-fg}Loading rules...{/gray-fg}";
+
 
 export class RulesPanel {
   readonly widget: blessed.Widgets.ListElement;
@@ -14,18 +14,18 @@ export class RulesPanel {
 
   constructor() {
     this.widget = blessed.list({
-      label: " (1) Rules ",
-      top: 4,
+      label: " [2] Rules ",
+      top: "31%",
       left: 0,
-      width: "70%",
-      height: "100%-8",
+      width: "35%",
+      height: "44%",
       keys: true,
       vi: true,
       mouse: true,
       tags: true,
       border: { type: "line" },
       style: {
-        selected: { fg: "black", bg: theme.border.focus },
+        selected: { fg: "black", bg: theme.border.focus, bold: true },
         border: { fg: theme.border.idle },
         label: { fg: theme.border.idle } as any
       },
@@ -45,9 +45,6 @@ export class RulesPanel {
   }
 
   setRules(rules: UfwRule[]): void {
-    // Keep the cursor on the same rule id across a refresh, instead of
-    // leaving it pinned to a numeric index that now points at a different
-    // rule after an add/delete shifted everything.
     const currentId = this.state === "loaded" ? this.getSelectedRule()?.id : undefined;
 
     this.state = "loaded";
@@ -62,13 +59,11 @@ export class RulesPanel {
       rules.map(rule => {
         const color = theme.action[rule.action] ?? "white";
         const direction = rule.direction === "OUT" ? "→" : "←";
-        const to = truncate(rule.to, COLUMN_WIDTH).padEnd(COLUMN_WIDTH);
-        const comment = rule.comment ? `  {gray-fg}# ${truncate(rule.comment, 20)}{/gray-fg}` : "";
-        return (
-          `${String(rule.id).padStart(3)} ${direction} ${to} ` +
-          `{${color}-fg}{bold}${rule.action.padEnd(7)}{/bold}{/${color}-fg} ` +
-          `${truncate(rule.from, COLUMN_WIDTH)}${comment}`
-        );
+        const actionBadge = `{${color}-fg}{bold}[${rule.action}]{/bold}{/${color}-fg}`;
+        const to = truncate(rule.to, 16).padEnd(16);
+        const from = truncate(rule.from, 14);
+
+        return `${String(rule.id).padStart(2)} ${direction} ${to} ${actionBadge} ${from}`;
       })
     );
 
@@ -94,3 +89,4 @@ export class RulesPanel {
     this.widget.focus();
   }
 }
+
