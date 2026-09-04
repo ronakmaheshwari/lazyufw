@@ -1,8 +1,7 @@
 import blessed from "blessed";
-import type { UfwStatus } from "../../firewall/ufwTypes";
 
 const DEFAULT_HINT = " ↑↓ Nav | a Add | i Insert | d Delete | u Toggle FW | l Toggle Log | r Refresh | ? Help | q Quit ";
- 
+const COPYRIGHT_LINE = "{gray-fg} © Ronak Maheshwari · {underline}https://github.com/ronakmaheshwari/lazyufw{/underline}{/gray-fg}";
 
 export function createHeader(): blessed.Widgets.BoxElement {
     return blessed.box({
@@ -15,39 +14,34 @@ export function createHeader(): blessed.Widgets.BoxElement {
     });
 }
 
-export function renderHeaderStatus(header: blessed.Widgets.BoxElement, status: Omit<UfwStatus, "rules">): void {
-    const active = status.status === "active";
-    const logging = status.logging ? status.logging : "unknown";
-    const inc = status.defaultIncoming ?? "?";
-    const out = status.defaultOutgoing ?? "?";
-    const statusDot = active ? "{green-fg}{blink}●{/blink}{/green-fg} Active" : "{red-fg}●{/red-fg} Inactive";
+export interface HeaderStatus {
+    firewallActive: boolean;
+    loggingOn: boolean;
+    statusUnavailable?: boolean;
+}
 
-    header.setContent(
-        "{bold}{cyan-fg}Lazy{/cyan-fg} UFW{/bold}\n" +
-        `${statusDot}  {gray-fg}|{/}  Logging: {yellow-fg}${logging}{/}  {gray-fg}|{/}  In: {green-fg}${inc.toLocaleUpperCase()}{/}  Out: {green-fg}${out.toLocaleUpperCase()}{/}`
-    );
+export function renderHeaderStatus(header: blessed.Widgets.BoxElement, status: HeaderStatus): void {
+    const line = status.statusUnavailable
+        ? "{red-fg}{bold}STATUS UNAVAILABLE{/bold}{/red-fg}"
+        : `ufw: ${status.firewallActive ? "{green-fg}active{/}" : "{red-fg}inactive{/}"}   log: ${status.loggingOn ? "on" : "off"}`;
+    header.setContent(`{bold}{cyan-fg}Lazy{/cyan-fg} UFW{/bold}\n${line}`);
 }
 
 export function createFooter(): blessed.Widgets.BoxElement {
-    return blessed.box({
+    const footer = blessed.box({
         bottom: 0, left: 0, width: "100%", height: 3,
         border: { type: "line" },
         tags: true,
         style: { border: { fg: "gray" } }
     });
-}
-
-export function setStatus(footer: blessed.Widgets.BoxElement, message: string): void {
-    footer.setContent(
-        ` {green-fg}{bold}Tab{/}{/} switch  {green-fg}{bold}↑↓{/} nav  {green-fg}{bold}a{/} add  {green-fg}{bold}d{/} delete  {green-fg}{bold}r{/} refresh  {green-fg}{bold}q{/} quit   {gray-fg}|{/} {green-fg}{bold}?{/} help {gray-fg}|{/} ${message}\n` +
-        `{gray-fg} © Ronak Maheshwari · {underline}https://github.com/ronakmaheshwari/lazyufw{/underline}{/gray-fg}`
-    );
+    footer.setContent(`${DEFAULT_HINT}\n${COPYRIGHT_LINE}`);
+    return footer;
 }
 
 export function setFooterHint(footer: blessed.Widgets.BoxElement, text: string): void {
-  footer.setContent(` ${text} `);
+  footer.setContent(` ${text} \n${COPYRIGHT_LINE}`);
 }
 
 export function resetFooterHint(footer: blessed.Widgets.BoxElement): void {
-  footer.setContent(DEFAULT_HINT);
+  footer.setContent(`${DEFAULT_HINT}\n${COPYRIGHT_LINE}`);
 }

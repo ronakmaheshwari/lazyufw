@@ -67,12 +67,12 @@ export class ConfirmModal implements Modal {
     this.focusables = [this.yesBtn, this.noBtn];
     this.focusIndex = opts.dangerous === false ? 0 : 1;
 
-    box.key(["escape"], () => this.callbacks.onCancel());
-    box.key(["tab", "left", "right"], () => {
+    this.base.bindKey(["escape"], () => this.callbacks.onCancel());
+    this.base.bindKey(["tab", "left", "right"], () => {
       this.focusIndex = 1 - this.focusIndex;
       this.focus();
     });
-    box.key(["enter"], () => {
+    this.base.bindKey(["enter"], () => {
       if (this.focusables[this.focusIndex] === this.yesBtn) void this.tryConfirm();
       else this.callbacks.onCancel();
     });
