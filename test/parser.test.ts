@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { parseRules, parseStatus } from "../firewall/ufwParser";
+import { parseRules, parseStatus, parseAppList, parseAppInfo } from "../firewall/ufwParser";
 
 describe("UFW Parser", () => {
     it("parses standard numbered rules with direction", () => {
@@ -75,5 +75,71 @@ New profiles: skip
         const output = `Status: inactive`;
         const parsed = parseStatus(output);
         expect(parsed.status).toBe("inactive");
+    });
+
+    it("parses application profile names from ufw app list", () => {
+        const output = `
+Available applications:
+  Apache Full
+  Apache Secure
+  Nginx Full
+  OpenSSH
+  WWW
+  WWW Cache
+  WWW Full
+  WWW Secure
+`;
+        const apps = parseAppList(output);
+        expect(apps).toEqual([
+            "Apache Full",
+            "Apache Secure",
+            "Nginx Full",
+            "OpenSSH",
+            "WWW",
+            "WWW Cache",
+            "WWW Full",
+            "WWW Secure"
+        ]);
+    });
+
+    it("returns an empty list when no profiles are available", () => {
+        expect(parseAppList("")).toEqual([]);
+        expect(parseAppList("No applications are installed yet")).toEqual([]);
+    });
+
+    it("parses application profile details with a single port", () => {
+        const output = `
+Profile: OpenSSH
+Title: OpenSSH secure shell server
+Description: OpenSSH secure shell server, an rshd replacement
+Ports:
+  22/tcp
+`;
+        const info = parseAppInfo(output);
+        expect(info.title).toBe("OpenSSH secure shell server");
+        expect(info.description).toBe("OpenSSH secure shell server, an rshd replacement");
+        expect(info.ports).toBe("22/tcp");
+    });
+
+    it("parses application profile details with ports on the Ports line", () => {
+        const output = `
+Profile: 'WWW Full'
+Title: Web Server (HTTP,HTTPS)
+Description: Web server with support for HTTP and HTTPS
+Ports:
+  80/tcp
+  443/tcp
+`;
+        const info = parseAppInfo(output);
+        expect(info.title).toBe("Web Server (HTTP,HTTPS)");
+        expect(info.ports).toBe("80/tcp, 443/tcp");
+    });
+
+    it("returns undefined optional fields when missing from app info", () => {
+        const output = `Profile: UnknownApp`;
+        const info = parseAppInfo(output);
+        expect(info.title).toBeUndefined();
+        expect(info.description).toBeUndefined();
+        expect(info.ports).toBeUndefined();
     });
 });

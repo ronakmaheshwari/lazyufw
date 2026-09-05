@@ -182,7 +182,7 @@ export class Dashboard {
 
     private focusPanel(index: number, animate = true): void {
         this.focusIndex = index;
-        const id = this.focusOrder[index];
+        const id = this.focusOrder[index]!;
         this.layout.activatePanel(id, animate);
         if (id === "status") this.statusPanel.focus();
         else if (id === "rules") this.rulesPanel.focus();
@@ -347,6 +347,71 @@ export class Dashboard {
         }
     }
 
+    private openLoggingModal(): void {
+        const modal = new LoggingModal(
+            this.screen,
+            this.currentLoggingLevel,
+            {
+                onCancel: () => {
+                    resetFooterHint(this.footer);
+                    this.focusManager.closeTop();
+                },
+                onSelect: async level => {
+                    await this.client.assertOk(this.client.setLogging(level));
+                    resetFooterHint(this.footer);
+                    this.focusManager.closeTop();
+                    await this.refresh();
+                    this.setTransientMessage(`Logging level set to ${level}.`);
+                }
+            }
+        );
+        setFooterHint(this.footer, "↑/↓: select | Enter: apply | Esc: cancel");
+        this.focusManager.open(modal);
+    }
+
+    private async openAppProfilesModal(): Promise<void> {
+        let profiles: string[] = [];
+        try {
+            const res = await this.client.listAppProfiles();
+            if (res.code === 0) {
+                profiles = parseAppList(res.stdout);
+            }
+        } catch {
+            // fall through to local scan
+        }
+        if (profiles.length === 0) {
+            profiles = getLocalAppProfiles();
+        }
+
+        const modal = new AppProfilesModal(
+            this.screen,
+            profiles,
+            {
+                onCancel: () => {
+                    resetFooterHint(this.footer);
+                    this.focusManager.closeTop();
+                },
+                onLoadInfo: async appName => {
+                    const res = await this.client.appProfileInfo(appName);
+                    if (res.code !== 0) {
+                        throw new Error(res.stderr.trim() || `Failed to load profile: ${appName}`);
+                    }
+                    const info = parseAppInfo(res.stdout);
+                    return { name: appName, ...info };
+                },
+                onApply: async (appName, action) => {
+                    await this.client.assertOk(this.client.allowApp(appName, action));
+                    resetFooterHint(this.footer);
+                    this.focusManager.closeTop();
+                    await this.refresh();
+                    this.setTransientMessage(`Applied ${action} rule for app "${appName}".`);
+                }
+            }
+        );
+        setFooterHint(this.footer, "Tab: switch | ↑↓: profile | ←→: action | Enter: apply | Esc: close");
+        this.focusManager.open(modal);
+    }
+
     private openAddModal(): void {
         const modal = new AddRuleModal(this.screen, {
             onCancel: () => {
@@ -480,11 +545,13 @@ export class Dashboard {
     private openActionMenu(): void {
         const items: ActionMenuItem[] = [
             { key: "a", label: "Add Rule", description: "Create rule (allow/deny/reject/limit)", action: () => this.openAddModal() },
+            { key: "P", label: "Application Profiles", description: "Browse & allow/deny installed app profiles", action: () => this.openAppProfilesModal() },
             { key: "i", label: "Insert Rule", description: "Insert rule at specific position", action: () => this.openInsertModal() },
             { key: "d", label: "Delete Rule", description: "Delete selected rule", action: () => this.openDeleteModal() },
             { key: "e", label: "Enable Firewall", description: "Activate UFW protection", action: () => this.enableFirewall() },
             { key: "D", label: "Disable Firewall", description: "Turn off UFW (SSH Protected)", action: () => this.handleDisableFirewall() },
             { key: "l", label: "Toggle Logging", description: `Turn logging ${this.loggingOn ? "OFF" : "ON"}`, action: () => this.toggleLogging() },
+            { key: "L", label: "Set Logging Level", description: `Set UFW logging level (current: ${this.currentLoggingLevel})`, action: () => this.openLoggingModal() },
             { key: "R", label: "Reset Rules", description: "Reset all rules to factory defaults", action: () => this.openResetModal() },
             { key: "r", label: "Refresh", description: "Reload rules and status", action: () => this.refresh() },
             { key: "s", label: "Sudoless Setup", description: "Configure passwordless sudoers rule", action: () => this.handleSetupSudo() },
