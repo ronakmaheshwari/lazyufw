@@ -132,7 +132,7 @@ export class LoggingModal implements Modal {
         this.list.on("select", () => void this.trySubmit());
 
         this.base.bindKey(["escape"], () => this.callbacks.onCancel());
-        this.base.bindKey(["1", "2", "3", "4"], (_, key) => {
+        this.list.key(["1", "2", "3", "4"], (_ch, key) => {
             const idx = Number(key.name) - 1;
             if (idx >= 0 && idx < LOG_OPTIONS.length) {
                 this.list.select(idx);

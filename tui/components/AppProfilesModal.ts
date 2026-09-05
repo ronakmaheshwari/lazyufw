@@ -162,7 +162,7 @@ export class AppProfilesModal implements Modal {
 
     private bindEvents(): void {
         this.base.bindKey(["escape"], () => {
-            if (this.searchInput.focused) this.searchInput.cancel();
+            if (this.screen.focused === this.searchInput) this.searchInput.cancel();
             this.callbacks.onCancel();
         });
 

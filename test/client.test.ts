@@ -38,4 +38,20 @@ describe("ufwClient Validation", () => {
         const failedPromise = Promise.resolve({ stdout: "", stderr: "Permission denied", code: 1 });
         expect(client.assertOk(failedPromise)).rejects.toThrow("Permission denied");
     });
+
+    it("rejects invalid logging levels in setLogging", async () => {
+        const res = await client.setLogging("bogus" as never);
+        expect(res.code).toBe(1);
+        expect(res.stderr).toContain("Invalid logging level");
+    });
+
+    it("rejects empty or invalid application profile names in allowApp", async () => {
+        const resEmpty = await client.allowApp("   ");
+        expect(resEmpty.code).toBe(1);
+        expect(resEmpty.stderr).toContain("Application profile name required");
+
+        const resBadAction = await client.allowApp("OpenSSH", "explode");
+        expect(resBadAction.code).toBe(1);
+        expect(resBadAction.stderr).toContain("Invalid action");
+    });
 });
