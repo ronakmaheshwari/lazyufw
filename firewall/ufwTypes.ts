@@ -24,13 +24,23 @@ export interface UfwStatus {
   raw?: string;
 }
 
+export type LogLevel = "off" | "low" | "medium" | "high" | "full";
+
+export interface AppProfileInfo {
+  name: string;
+  title?: string;
+  description?: string;
+  ports?: string;
+}
+
 export interface CreateRuleInput {
   action: "allow" | "deny" | "reject" | "limit";
-  port: number | string;
+  port?: number | string;
   protocol?: string;
   direction?: "in" | "out";
   from?: string;
   comment?: string;
+  app?: string;
 }
 
 export interface InsertRuleInput {

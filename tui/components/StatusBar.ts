@@ -1,7 +1,7 @@
 import blessed from "blessed";
 
 const DEFAULT_HINT =
-    " {bold}[1-4]{/bold} Panels  {bold}[Tab]{/bold} Next  {bold}[a]{/bold} Add  {bold}[i]{/bold} Insert  {bold}[d]{/bold} Delete  {bold}[e]{/bold} Enable  {bold}[D]{/bold} Disable  {bold}[l]{/bold} Log  {bold}[R]{/bold} Reset  {bold}[x]{/bold} Menu  {bold}[?]{/bold} Help  {bold}[q]{/bold} Quit";
+    " {bold}[1-4]{/bold} Panels  {bold}[a]{/bold} Add  {bold}[P]{/bold} Apps  {bold}[i]{/bold} Insert  {bold}[d]{/bold} Del  {bold}[L]{/bold} Log  {bold}[/]{/bold} Find  {bold}[o]{/bold} Sort  {bold}[x]{/bold} Menu  {bold}[?]{/bold} Help  {bold}[q]{/bold} Quit";
 
 const COPYRIGHT_LINE = "{gray-fg}lazyufw · The lazier way to manage UFW · Press [x] for Actions Menu{/gray-fg}";
 

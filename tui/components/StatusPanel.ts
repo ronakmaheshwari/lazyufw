@@ -48,7 +48,7 @@ export class StatusPanel {
             : "{red-bg}{white-fg}{bold} INACTIVE {/bold}{/white-fg}{/red-bg}";
 
         const logBadge = logging && logging.toLowerCase().includes("on")
-            ? `{green-fg}● ON (${logging.replace(/^on\s*/i, "").trim() || "low"}){/green-fg}`
+            ? `{green-fg}● ON ${logging.replace(/^on\s*/i, "").trim() || "low"}{/green-fg}`
             : "{gray-fg}○ OFF{/gray-fg}";
 
         const sudoBadge = this.isSudoReady

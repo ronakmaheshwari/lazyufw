@@ -12,17 +12,20 @@ import {
     resetFooterHint,
     setFooterHint
 } from "./components/StatusBar";
-import { parseRules, parseStatus } from "../firewall/ufwParser";
+import { parseAppInfo, parseAppList, parseRules, parseStatus, getLocalAppProfiles } from "../firewall/ufwParser";
 import { AddRuleModal } from "./components/Addrulemodal";
 import { InsertRuleModal } from "./components/Insertrulemodal";
 import { ConfirmModal } from "./components/Confirmmodal";
 import { HelpModal } from "./components/Helpmodal";
 import { SshWarningModal } from "./components/SshWarningModal";
+import { LoggingModal } from "./components/LoggingModal";
+import { AppProfilesModal } from "./components/AppProfilesModal";
 import { ActionMenuModal, type ActionMenuItem } from "./components/ActionMenuModal";
 import { ensureSudoCached, isSudoConfigured } from "../cli/checkSudo";
 import { setupSudo } from "../cli/setupSudo";
 import { detectActiveSshSession } from "../security/sshProtection";
 import { LayoutManager, type PanelId } from "./layout";
+import type { LogLevel } from "../firewall/ufwTypes";
 
 export class Dashboard {
     private screen: blessed.Widgets.Screen;
@@ -40,6 +43,7 @@ export class Dashboard {
     private transientTimer: ReturnType<typeof setTimeout> | null = null;
     private firewallActive = false;
     private loggingOn = false;
+    private currentLoggingLevel = "off";
     private statusUnavailable = false;
 
     constructor(private client: ufwClient) {
@@ -112,10 +116,12 @@ export class Dashboard {
 
         // UFW Operations
         this.screen.key(["a"], guarded(() => this.openAddModal()));
+        this.screen.key(["P", "S-p"], guarded(() => this.openAppProfilesModal()));
         this.screen.key(["i"], guarded(() => this.openInsertModal()));
         this.screen.key(["d"], guarded(() => this.openDeleteModal()));
         this.screen.key(["e"], guarded(() => this.enableFirewall()));
         this.screen.key(["D", "S-d"], guarded(() => this.handleDisableFirewall()));
+        this.screen.key(["L", "S-l"], guarded(() => this.openLoggingModal()));
         this.screen.key(["l"], guarded(() => this.toggleLogging()));
         this.screen.key(["R", "S-r"], guarded(() => this.openResetModal()));
         this.screen.key(["x"], guarded(() => this.openActionMenu()));
@@ -130,6 +136,16 @@ export class Dashboard {
 
             if (ch === "D" || (key && (key.full === "S-d" || (key.name === "d" && key.shift)))) {
                 void this.handleDisableFirewall();
+                return;
+            }
+
+            if (ch === "L" || (key && (key.full === "S-l" || (key.name === "l" && key.shift)))) {
+                void this.openLoggingModal();
+                return;
+            }
+
+            if (ch === "P" || (key && (key.full === "S-p" || (key.name === "p" && key.shift)))) {
+                void this.openAppProfilesModal();
                 return;
             }
 
@@ -231,6 +247,7 @@ export class Dashboard {
                 const parsedStatus = parseStatus(statusRes.stdout);
                 this.firewallActive = parsedStatus.status === "active";
                 this.loggingOn = Boolean(parsedStatus.logging && parsedStatus.logging.toLowerCase().includes("on"));
+                this.currentLoggingLevel = parsedStatus.logging ?? "off";
 
                 const parsedRules = parseRules(rulesRes.stdout);
                 this.rulesPanel.setRules(parsedRules);

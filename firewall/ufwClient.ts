@@ -1,7 +1,7 @@
 import { UFW_PATH } from "../utils/config";
 import type { ExecResult } from "../utils/exec";
 import execute from "../utils/exec";
-import type { CreateRuleInput } from "./ufwTypes";
+import type { CreateRuleInput, LogLevel } from "./ufwTypes";
 
 const PORT_RE = /^\d{1,5}(:\d{1,5})?$/;
 const PROTO_RE = /^(tcp|udp)$/;
@@ -63,11 +63,6 @@ export class ufwClient {
     }
 
     async createRule(input: CreateRuleInput): Promise<ExecResult> {
-        const port = String(input.port).trim();
-        if (!PORT_RE.test(port)) return invalid(`Invalid port: ${port}`);
-        const proto = input.protocol && input.protocol !== "any" ? input.protocol : undefined;
-        if (proto && !PROTO_RE.test(proto)) return invalid(`Invalid protocol: ${proto}`);
-
         const action = input.action.toLowerCase();
         const args = [UFW_PATH, action];
 
@@ -75,10 +70,24 @@ export class ufwClient {
             args.push(input.direction.toLowerCase());
         }
 
-        if (input.from && input.from.trim()) {
-            args.push("from", input.from.trim(), "to", "any", "port", port);
+        if (input.app && input.app.trim()) {
+            const app = input.app.trim();
+            if (input.from && input.from.trim()) {
+                args.push("from", input.from.trim(), "to", "any", "app", app);
+            } else {
+                args.push(app);
+            }
         } else {
-            args.push(proto ? `${port}/${proto}` : port);
+            const port = String(input.port ?? "").trim();
+            if (!PORT_RE.test(port)) return invalid(`Invalid port: ${port}`);
+            const proto = input.protocol && input.protocol !== "any" ? input.protocol : undefined;
+            if (proto && !PROTO_RE.test(proto)) return invalid(`Invalid protocol: ${proto}`);
+
+            if (input.from && input.from.trim()) {
+                args.push("from", input.from.trim(), "to", "any", "port", port);
+            } else {
+                args.push(proto ? `${port}/${proto}` : port);
+            }
         }
 
         if (input.comment && input.comment.trim()) {
@@ -104,12 +113,40 @@ export class ufwClient {
         return execute("sudo", args);
     }
 
+    async setLogging(level: LogLevel): Promise<ExecResult> {
+        const validLevels: LogLevel[] = ["off", "low", "medium", "high", "full"];
+        if (!validLevels.includes(level)) {
+            return invalid(`Invalid logging level: ${level}`);
+        }
+        return execute("sudo", [UFW_PATH, "logging", level]);
+    }
+
     async enableLog(): Promise<ExecResult> {
-        return execute("sudo", [UFW_PATH, "logging", "on"]);
+        return this.setLogging("low");
     }
 
     async disableLog(): Promise<ExecResult> {
-        return execute("sudo", [UFW_PATH, "logging", "off"]);
+        return this.setLogging("off");
+    }
+
+    async listAppProfiles(): Promise<ExecResult> {
+        return execute("sudo", [UFW_PATH, "app", "list"]);
+    }
+
+    async appProfileInfo(profile: string): Promise<ExecResult> {
+        const trimmed = profile.trim();
+        if (!trimmed) return invalid("Application profile name required");
+        return execute("sudo", [UFW_PATH, "app", "info", trimmed]);
+    }
+
+    async allowApp(profile: string, action = "allow"): Promise<ExecResult> {
+        const trimmed = profile.trim();
+        if (!trimmed) return invalid("Application profile name required");
+        const act = action.toLowerCase();
+        if (!["allow", "deny", "reject", "limit"].includes(act)) {
+            return invalid(`Invalid action: ${action}`);
+        }
+        return execute("sudo", [UFW_PATH, act, trimmed]);
     }
 
     async enable(): Promise<ExecResult> {

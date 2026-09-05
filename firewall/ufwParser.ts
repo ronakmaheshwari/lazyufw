@@ -73,3 +73,91 @@ export function parseStatus(output: string): Omit<UfwStatus, "rules"> {
         raw: output.trim()
     };
 }
+
+export function parseAppList(output: string): string[] {
+    const apps: string[] = [];
+    let start = false;
+    for (const line of output.split(/\r?\n/)) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        if (/available applications:/i.test(trimmed)) {
+            start = true;
+            continue;
+        }
+        if (start) {
+            apps.push(trimmed);
+        }
+    }
+    return apps;
+}
+
+export function parseAppInfo(output: string): { title?: string; description?: string; ports?: string } {
+    let title: string | undefined;
+    let description: string | undefined;
+    let ports: string | undefined;
+
+    const lines = output.split(/\r?\n/);
+    let inPorts = false;
+    const portLines: string[] = [];
+
+    for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line) continue;
+
+        const titleMatch = /^Title:\s*(.+)$/i.exec(line);
+        if (titleMatch) {
+            title = titleMatch[1]?.trim();
+            inPorts = false;
+            continue;
+        }
+
+        const descMatch = /^Description:\s*(.+)$/i.exec(line);
+        if (descMatch) {
+            description = descMatch[1]?.trim();
+            inPorts = false;
+            continue;
+        }
+
+        if (/^Ports:/i.test(line)) {
+            inPorts = true;
+            const remainder = line.replace(/^Ports:\s*/i, "").trim();
+            if (remainder) portLines.push(remainder);
+            continue;
+        }
+
+        if (inPorts) {
+            if (/^\w+:/.test(line)) {
+                inPorts = false;
+            } else {
+                portLines.push(line);
+            }
+        }
+    }
+
+    if (portLines.length > 0) {
+        ports = portLines.join(", ");
+    }
+
+    return { title, description, ports };
+}
+
+export function getLocalAppProfiles(appDir = "/etc/ufw/applications.d"): string[] {
+    try {
+        const { readdirSync, readFileSync, existsSync } = require("node:fs");
+        if (!existsSync(appDir)) return [];
+        const files: string[] = readdirSync(appDir);
+        const apps: string[] = [];
+        for (const file of files) {
+            const content = readFileSync(`${appDir}/${file}`, "utf-8");
+            for (const line of content.split(/\r?\n/)) {
+                const match = /^\[([^\]]+)\]/.exec(line.trim());
+                if (match && match[1]) {
+                    apps.push(match[1].trim());
+                }
+            }
+        }
+        return Array.from(new Set(apps)).sort();
+    } catch {
+        return [];
+    }
+}

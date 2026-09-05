@@ -7,10 +7,12 @@ const PLACEHOLDER =
   "{gray-fg}Select a rule on the left [2] to inspect details, actions, and raw commands.\n\n" +
   "Quick Actions:\n" +
   "  [a] Add Rule        [i] Insert Rule\n" +
-  "  [d] Delete Rule     [x] Action Menu\n" +
+  "  [P] App Profiles    [d] Delete Rule\n" +
   "  [e] Enable UFW      [D] Disable UFW (SSH Protected)\n" +
-  "  [l] Toggle Log      [R] Reset Firewall\n" +
-  "  [r] Refresh         [?] Help Cheatsheet{/gray-fg}";
+  "  [L] Log Level Modal [l] Quick Toggle Log\n" +
+  "  [/] Search / Filter [o] Sort Rules\n" +
+  "  [r] Refresh         [x] Action Menu\n" +
+  "  [?] Help Cheatsheet [q] Quit{/gray-fg}";
 
 export class DetailPanel {
   readonly widget: blessed.Widgets.BoxElement;
@@ -52,13 +54,34 @@ export class DetailPanel {
     const color = theme.action[rule.action] ?? "white";
     const actionBadge = `{${color}-bg}{black-fg}{bold} ${rule.action} {/bold}{/black-fg}{/${color}-bg}`;
 
-    const protocolMatch = /\/(\w+)$/.exec(rule.to);
-    const protocol = protocolMatch?.[1] ?? "any";
-    const portMatch = /^(\d+(?::\d+)?)/.exec(rule.to);
-    const port = portMatch ? portMatch[1] : rule.to;
+    const cleanTo = rule.to.replace(/\s*\(v6\)/i, "").trim();
+    const cleanFrom = rule.from.replace(/\s*\(v6\)/i, "").trim();
     const isV6 = rule.to.includes("(v6)") || rule.from.includes("(v6)");
 
-    const cmdEquivalent = `ufw ${rule.action.toLowerCase()} from ${rule.from} to any port ${port}${protocol !== "any" ? ` proto ${protocol}` : ""}`;
+    const isPortRule = /^\d+(?::\d+)?(\/\w+)?$/.test(cleanTo);
+    let cmdEquivalent: string;
+    let protoDisplay: string;
+
+    if (isPortRule) {
+      const protocolMatch = /\/(\w+)$/.exec(cleanTo);
+      const protocol = protocolMatch?.[1] ?? "any";
+      const portMatch = /^(\d+(?::\d+)?)/.exec(cleanTo);
+      const port = portMatch ? portMatch[1] : cleanTo;
+      protoDisplay = protocol.toUpperCase();
+      if (cleanFrom.toLowerCase() === "anywhere") {
+        cmdEquivalent = `ufw ${rule.action.toLowerCase()} ${cleanTo}${rule.comment ? ` comment "${rule.comment}"` : ""}`;
+      } else {
+        cmdEquivalent = `ufw ${rule.action.toLowerCase()} from ${cleanFrom} to any port ${port}${protocol !== "any" ? ` proto ${protocol}` : ""}${rule.comment ? ` comment "${rule.comment}"` : ""}`;
+      }
+    } else {
+      protoDisplay = "APP PROFILE";
+      if (cleanFrom.toLowerCase() === "anywhere") {
+        cmdEquivalent = `ufw ${rule.action.toLowerCase()} "${cleanTo}"${rule.comment ? ` comment "${rule.comment}"` : ""}`;
+      } else {
+        cmdEquivalent = `ufw ${rule.action.toLowerCase()} from ${cleanFrom} to any app "${cleanTo}"${rule.comment ? ` comment "${rule.comment}"` : ""}`;
+      }
+    }
+
     const deleteCmd = `sudo ufw delete ${rule.id}`;
 
     const lines = [
@@ -68,7 +91,7 @@ export class DetailPanel {
       ` {bold}Direction:{/bold}   ${rule.direction === "OUT" ? "OUTGOING (OUT →)" : "INCOMING (IN ←)"}`,
       ` {bold}Destination:{/bold} ${rule.to}`,
       ` {bold}Source:{/bold}      ${rule.from}`,
-      ` {bold}Protocol:{/bold}    ${protocol.toUpperCase()}`,
+      ` {bold}Protocol:{/bold}    ${protoDisplay}`,
       ` {bold}IP Version:{/bold}  ${isV6 ? "IPv6" : "IPv4"}`,
       rule.comment ? ` {bold}Comment:{/bold}     {yellow-fg}${rule.comment}{/yellow-fg}` : "",
       "",

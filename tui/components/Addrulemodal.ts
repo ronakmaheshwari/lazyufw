@@ -4,7 +4,7 @@ import { BaseModal } from "./BaseModal";
 
 const ACTIONS: Array<CreateRuleInput["action"]> = ["allow", "deny", "reject", "limit"];
 const PROTOCOLS = ["any", "tcp", "udp"] as const;
-
+const IP_OR_CIDR_RE = /^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$/;
 
 export interface AddRuleModalCallbacks {
   onSubmit(input: CreateRuleInput): Promise<void> | void;
@@ -15,9 +15,11 @@ export class AddRuleModal implements Modal {
   private base: BaseModal;
   private actionIndex = 0;
   private protocolIndex = 0;
-  private portInput: blessed.Widgets.TextboxElement;
   private actionLabel: blessed.Widgets.BoxElement;
+  private portInput: blessed.Widgets.TextboxElement;
   private protocolLabel: blessed.Widgets.BoxElement;
+  private fromInput: blessed.Widgets.TextboxElement;
+  private commentInput: blessed.Widgets.TextboxElement;
   private errorLine: blessed.Widgets.BoxElement;
   private submitBtn: blessed.Widgets.ButtonElement;
   private focusables: blessed.Widgets.BlessedElement[];
@@ -27,45 +29,67 @@ export class AddRuleModal implements Modal {
     private screen: blessed.Widgets.Screen,
     private callbacks: AddRuleModalCallbacks
   ) {
-    this.base = new BaseModal(screen, { title: "Add Rule", width: "50%", height: 11 });
+    this.base = new BaseModal(screen, { title: "Add Rule", width: "55%", height: 16 });
     const box = this.base.box;
 
-    blessed.box({ parent: box, top: 0, left: 2, width: 10, content: "Action:" });
+    blessed.box({ parent: box, top: 0, left: 2, width: 14, content: "Action:" });
     this.actionLabel = blessed.box({
       parent: box,
       top: 0,
-      left: 12,
-      width: 20,
+      left: 16,
+      width: 28,
       keys: true,
       content: this.formatChoice(ACTIONS, this.actionIndex),
       style: { fg: "cyan" }
     });
 
-    blessed.box({ parent: box, top: 1, left: 2, width: 10, content: "Port:" });
+    blessed.box({ parent: box, top: 1, left: 2, width: 14, content: "Port:" });
     this.portInput = blessed.textbox({
       parent: box,
       top: 1,
-      left: 12,
-      width: "70%-14",
+      left: 16,
+      width: "70%-16",
       height: 1,
       keys: true,
       style: { fg: "white", focus: { fg: "black", bg: "white" } }
     });
 
-    blessed.box({ parent: box, top: 2, left: 2, width: 10, content: "Protocol:" });
+    blessed.box({ parent: box, top: 2, left: 2, width: 14, content: "Protocol:" });
     this.protocolLabel = blessed.box({
       parent: box,
       top: 2,
-      left: 12,
+      left: 16,
       width: 20,
       keys: true,
       content: this.formatChoice(PROTOCOLS, this.protocolIndex),
       style: { fg: "cyan" }
     });
 
-    this.errorLine = blessed.box({
+    blessed.box({ parent: box, top: 3, left: 2, width: 14, content: "From (IP/CIDR):" });
+    this.fromInput = blessed.textbox({
+      parent: box,
+      top: 3,
+      left: 16,
+      width: "70%-16",
+      height: 1,
+      keys: true,
+      style: { fg: "white", focus: { fg: "black", bg: "white" } }
+    });
+
+    blessed.box({ parent: box, top: 4, left: 2, width: 14, content: "Comment:" });
+    this.commentInput = blessed.textbox({
       parent: box,
       top: 4,
+      left: 16,
+      width: "70%-16",
+      height: 1,
+      keys: true,
+      style: { fg: "white", focus: { fg: "black", bg: "white" } }
+    });
+
+    this.errorLine = blessed.box({
+      parent: box,
+      top: 6,
       left: 2,
       width: "90%",
       height: 1,
@@ -76,7 +100,7 @@ export class AddRuleModal implements Modal {
 
     this.submitBtn = blessed.button({
       parent: box,
-      top: 6,
+      top: 8,
       left: 2,
       width: 12,
       height: 1,
@@ -88,17 +112,26 @@ export class AddRuleModal implements Modal {
 
     blessed.box({
       parent: box,
-      top: 6,
+      top: 8,
       right: 2,
-      width: 26,
+      width: 32,
       height: 1,
-      content: "Tab: next  Esc: cancel",
+      content: "Tab: next  ←/→: choice  Esc: cancel",
       style: { fg: "gray" }
     });
 
-    this.focusables = [this.actionLabel, this.portInput, this.protocolLabel, this.submitBtn];
+    this.focusables = [
+      this.actionLabel,
+      this.portInput,
+      this.protocolLabel,
+      this.fromInput,
+      this.commentInput,
+      this.submitBtn
+    ];
     this.bindKeys();
     this.portInput.on("keypress", () => this.clearError());
+    this.fromInput.on("keypress", () => this.clearError());
+    this.commentInput.on("keypress", () => this.clearError());
   }
 
   private formatChoice<T extends string>(options: readonly T[], index: number): string {
@@ -109,6 +142,8 @@ export class AddRuleModal implements Modal {
     for (const widget of this.focusables) {
       widget.key(["escape"], () => {
         if (widget === this.portInput) this.portInput.cancel();
+        if (widget === this.fromInput) this.fromInput.cancel();
+        if (widget === this.commentInput) this.commentInput.cancel();
         this.callbacks.onCancel();
       });
     }
@@ -130,21 +165,25 @@ export class AddRuleModal implements Modal {
     this.submitBtn.key(["enter"], () => void this.trySubmit());
     this.submitBtn.on("press", () => void this.trySubmit());
 
-    // The textbox needs its own reader stopped BEFORE focus moves away,
-    // or grabKeys stays true and every widget after it (including this
-    // one, on re-focus) stops receiving keys correctly.
-    this.portInput.key(["tab"], () => {
-      this.portInput.cancel();
-      this.moveFocus(1);
-    });
-    this.portInput.key(["S-tab"], () => {
-      this.portInput.cancel();
-      this.moveFocus(-1);
-    });
-    this.portInput.key(["enter"], () => {
-      this.portInput.submit();
-      void this.trySubmit();
-    });
+    // Textboxes need their reader stopped before focus moves away
+    const wireTextbox = (tb: blessed.Widgets.TextboxElement) => {
+      tb.key(["tab"], () => {
+        tb.cancel();
+        this.moveFocus(1);
+      });
+      tb.key(["S-tab"], () => {
+        tb.cancel();
+        this.moveFocus(-1);
+      });
+      tb.key(["enter"], () => {
+        tb.submit();
+        void this.trySubmit();
+      });
+    };
+
+    wireTextbox(this.portInput);
+    wireTextbox(this.fromInput);
+    wireTextbox(this.commentInput);
 
     this.base.bindKey(["escape"], () => this.callbacks.onCancel());
   }
@@ -178,6 +217,9 @@ export class AddRuleModal implements Modal {
 
   private async trySubmit(): Promise<void> {
     const port = this.portInput.getValue().trim();
+    const from = this.fromInput.getValue().trim();
+    const comment = this.commentInput.getValue().trim();
+
     if (!port) {
       this.setError("Port is required.");
       return;
@@ -187,13 +229,20 @@ export class AddRuleModal implements Modal {
       return;
     }
 
+    if (from && !IP_OR_CIDR_RE.test(from) && from.toLowerCase() !== "any") {
+      this.setError("From must be a valid IP/CIDR (e.g. 192.168.1.0/24) or empty.");
+      return;
+    }
+
     this.setError("");
     const protocol = PROTOCOLS[this.protocolIndex];
     try {
       await this.callbacks.onSubmit({
         action: ACTIONS[this.actionIndex]!,
         port,
-        protocol: protocol === "any" ? undefined : protocol
+        protocol: protocol === "any" ? undefined : protocol,
+        from: from ? from : undefined,
+        comment: comment ? comment : undefined
       });
     } catch (err) {
       this.setError(err instanceof Error ? err.message : String(err));
@@ -211,8 +260,12 @@ export class AddRuleModal implements Modal {
   focus(): void {
     const current = this.focusables[this.focusIndex]!;
     current.focus();
-    if (current === this.portInput) {
-      this.portInput.readInput();
+    if (
+      current === this.portInput ||
+      current === this.fromInput ||
+      current === this.commentInput
+    ) {
+      (current as blessed.Widgets.TextboxElement).readInput();
     }
     this.screen.render();
   }
