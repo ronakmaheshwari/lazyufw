@@ -5,7 +5,7 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "bin": {
-    "lazyufw": "./dist/index.js"
+    "lazyufw": "dist/index.js"
   },
   "type": "module",
   "files": [
@@ -15,6 +15,10 @@
     "LICENSE"
   ],
   "author": "ronakmaheshwari",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ronakmaheshwari/lazyufw.git"
+  },
   "license": "MIT",
   "keywords": [
     "ufw",
