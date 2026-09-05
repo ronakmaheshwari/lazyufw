@@ -37,6 +37,13 @@ export class RulesPanel {
       color => (this.widget.style.border.fg = color),
       color => ((this.widget.style as any).label.fg = color)
     );
+
+    this.widget.key(["?", "S-/", "h", "S-h", "f1"], () => {
+      this.widget.screen.emit("key ?", "?", { full: "?" });
+    });
+    this.widget.key(["D", "S-d"], () => {
+      this.widget.screen.emit("key S-d", "D", { full: "S-d" });
+    });
   }
 
   setLoading(): void {

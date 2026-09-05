@@ -40,7 +40,6 @@ export class ActionMenuModal implements Modal {
             width: "96%",
             height: itemCount,
             keys: true,
-            vi: true,
             mouse: true,
             tags: true,
             style: {
@@ -68,7 +67,17 @@ export class ActionMenuModal implements Modal {
         });
 
         for (const item of items) {
-            this.base.bindKey([item.key, item.key.toLowerCase(), item.key.toUpperCase()], () => {
+            const keys: string[] = [item.key];
+            if (item.key === item.key.toUpperCase() && item.key !== item.key.toLowerCase()) {
+                keys.push(`S-${item.key.toLowerCase()}`);
+            } else if (item.key === item.key.toLowerCase() && item.key !== item.key.toUpperCase()) {
+                keys.push(item.key.toLowerCase());
+            }
+            if (item.key === "?") {
+                keys.push("S-/", "h", "S-h", "f1");
+            }
+
+            this.base.bindKey(keys, () => {
                 this.onClose();
                 void item.action();
             });

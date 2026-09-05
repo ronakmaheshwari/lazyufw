@@ -44,17 +44,11 @@ export function parseSshEnv(env: NodeJS.ProcessEnv = process.env): SshSessionInf
     return { isActive: false };
 }
 
-/**
- * Checks whether an SSH server is actively listening or whether an active SSH session is connected.
- */
 export async function detectActiveSshSession(env: NodeJS.ProcessEnv = process.env): Promise<SshSessionInfo> {
-    // 1. Direct environment check (current process is inside an SSH connection)
     const envInfo = parseSshEnv(env);
     if (envInfo.isActive) {
         return envInfo;
     }
-
-    // 2. Check if sshd is listening or running on system
     try {
         const ssRes = await execute("ss", ["-tlpn", "sport = :22"]);
         if (ssRes.code === 0 && ssRes.stdout.includes(":22")) {
@@ -65,7 +59,6 @@ export async function detectActiveSshSession(env: NodeJS.ProcessEnv = process.en
             };
         }
     } catch {
-        // ss might not be available or command failed
     }
 
     try {
@@ -78,7 +71,6 @@ export async function detectActiveSshSession(env: NodeJS.ProcessEnv = process.en
             };
         }
     } catch {
-        // ignore
     }
 
     return { isActive: false };

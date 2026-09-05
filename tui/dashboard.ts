@@ -83,11 +83,29 @@ export class Dashboard {
             void handler();
         };
 
-        // Navigation
-        this.screen.key(["1"], guarded(() => this.toggleMaximize("status")));
-        this.screen.key(["2"], guarded(() => this.toggleMaximize("rules")));
-        this.screen.key(["3"], guarded(() => this.toggleMaximize("raw")));
-        this.screen.key(["4"], guarded(() => this.toggleMaximize("detail")));
+        const switchTo = (id: PanelId) => {
+            const targetIndex = this.focusOrder.indexOf(id);
+            if (this.layout.isMaximized()) {
+                if (this.focusIndex === targetIndex) {
+                    this.layout.restoreSplit();
+                } else {
+                    this.focusPanel(targetIndex, false);
+                    this.layout.toggleMaximize(id);
+                }
+            } else {
+                if (this.focusIndex === targetIndex) {
+                    this.layout.toggleMaximize(id);
+                } else {
+                    this.focusPanel(targetIndex, true);
+                }
+            }
+        };
+
+        // Navigation (Switch between 1, 2, 3, 4 with smooth animations)
+        this.screen.key(["1"], guarded(() => switchTo("status")));
+        this.screen.key(["2"], guarded(() => switchTo("rules")));
+        this.screen.key(["3"], guarded(() => switchTo("raw")));
+        this.screen.key(["4"], guarded(() => switchTo("detail")));
         this.screen.key(["tab"], guarded(() => this.cycleFocus(1)));
         this.screen.key(["S-tab"], guarded(() => this.cycleFocus(-1)));
         this.screen.key(["escape"], guarded(() => this.layout.restoreSplit()));
@@ -97,31 +115,59 @@ export class Dashboard {
         this.screen.key(["i"], guarded(() => this.openInsertModal()));
         this.screen.key(["d"], guarded(() => this.openDeleteModal()));
         this.screen.key(["e"], guarded(() => this.enableFirewall()));
-        this.screen.key(["D"], guarded(() => this.handleDisableFirewall()));
+        this.screen.key(["D", "S-d"], guarded(() => this.handleDisableFirewall()));
         this.screen.key(["l"], guarded(() => this.toggleLogging()));
-        this.screen.key(["R"], guarded(() => this.openResetModal()));
+        this.screen.key(["R", "S-r"], guarded(() => this.openResetModal()));
         this.screen.key(["x"], guarded(() => this.openActionMenu()));
         this.screen.key(["r"], guarded(() => this.refresh()));
         this.screen.key(["s"], guarded(() => this.handleSetupSudo()));
-        this.screen.key(["?"], guarded(() => this.openHelpModal()));
+        this.screen.key(["?", "S-/", "h", "S-h", "f1"], guarded(() => this.openHelpModal()));
         this.screen.key(["q", "C-c"], guarded(() => process.exit(0)));
 
-        this.focusPanel(this.focusIndex);
+        // Global low-level fallback to guarantee uppercase and special keys fire reliably
+        this.screen.on("keypress", (ch, key) => {
+            if (this.focusManager.isModalOpen) return;
+
+            if (ch === "D" || (key && (key.full === "S-d" || (key.name === "d" && key.shift)))) {
+                void this.handleDisableFirewall();
+                return;
+            }
+
+            if (ch === "R" || (key && (key.full === "S-r" || (key.name === "r" && key.shift)))) {
+                void this.openResetModal();
+                return;
+            }
+
+            if (
+                ch === "?" ||
+                (key && (key.full === "?" || key.full === "S-/" || key.name === "?" || key.sequence === "?"))
+            ) {
+                void this.openHelpModal();
+                return;
+            }
+        });
+
+        this.focusPanel(this.focusIndex, false);
     }
 
     private toggleMaximize(id: PanelId): void {
         this.focusIndex = this.focusOrder.indexOf(id);
         this.layout.toggleMaximize(id);
-        this.focusPanel(this.focusIndex);
+        this.focusPanel(this.focusIndex, false);
     }
 
     private cycleFocus(delta: number): void {
-        this.focusPanel((this.focusIndex + delta + this.focusOrder.length) % this.focusOrder.length);
+        const nextIndex = (this.focusIndex + delta + this.focusOrder.length) % this.focusOrder.length;
+        if (this.layout.isMaximized()) {
+            this.layout.restoreSplit();
+        }
+        this.focusPanel(nextIndex, true);
     }
 
-    private focusPanel(index: number): void {
+    private focusPanel(index: number, animate = true): void {
         this.focusIndex = index;
         const id = this.focusOrder[index];
+        this.layout.activatePanel(id, animate);
         if (id === "status") this.statusPanel.focus();
         else if (id === "rules") this.rulesPanel.focus();
         else if (id === "raw") this.rawPanel.focus();
@@ -220,10 +266,6 @@ export class Dashboard {
         }
     }
 
-    /**
-     * Disabling the firewall checks SSH session protection!
-     * If an active SSH session is detected, SshWarningModal pops up.
-     */
     private async handleDisableFirewall(): Promise<void> {
         const sshInfo = await detectActiveSshSession();
 
@@ -452,14 +494,12 @@ export class Dashboard {
 
     async start(): Promise<void> {
         await this.refresh();
-        this.focusPanel(this.focusIndex);
+        this.focusPanel(this.focusIndex, false);
         this.screen.render();
     }
 }
 
 export async function startDashboard(client: ufwClient): Promise<void> {
-    // If sudo is not already configured passwordlessly, attempt terminal auth check
-    // BEFORE blessed initializes to avoid corrupting curses screen
     if (!isSudoConfigured()) {
         if (!ensureSudoCached()) {
             console.warn("lazyufw: sudo credentials not cached. Continuing; commands may prompt.");

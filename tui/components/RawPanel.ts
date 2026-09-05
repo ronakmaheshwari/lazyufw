@@ -7,10 +7,10 @@ export class RawPanel {
     constructor() {
         this.widget = blessed.box({
             label: " [3] Raw Output ",
-            top: "75%",
-            left: 0,
-            width: "35%",
-            height: "100%-78",
+            top: 3,
+            left: "50%",
+            width: "50%",
+            height: "50%",
             border: { type: "line" },
             tags: true,
             scrollable: true,

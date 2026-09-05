@@ -48,7 +48,7 @@ export class HelpModal implements Modal {
       height: "80%",
       content: HELP_TEXT
     });
-    this.base.bindKey(["escape", "?", "q", "enter"], () => this.onClose());
+    this.base.bindKey(["escape", "?", "S-/", "h", "S-h", "q", "enter"], () => this.onClose());
   }
 
   show(): void {
