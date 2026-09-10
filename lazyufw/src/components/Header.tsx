@@ -22,10 +22,11 @@ const Header = ({
     <box
       flexDirection="row"
       alignItems="center"
-      justifyContent="space-around"
+      justifyContent="space-between"
       width="100%"
-      height={2}
-      padding={1}
+      height={5}
+      paddingLeft={2}
+      paddingRight={2}
       border
       borderColor={"#01afc6"}
       borderStyle="rounded"

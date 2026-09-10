@@ -43,6 +43,7 @@ export interface StatusProps {
   policy: PolicyInterface;
   ruleCount: number;
   auth: string;
+  active?: boolean;
 }
 
 const Status = ({
@@ -52,13 +53,61 @@ const Status = ({
   policy,
   ruleCount,
   auth,
+  active = true,
 }: StatusProps) => {
   const isActive = state.toUpperCase() === "ACTIVE";
+
+  if (!active) {
+    return (
+      <box
+        flexDirection="row"
+        alignItems="center"
+        width="100%"
+        height={3}
+        paddingLeft={2}
+        paddingRight={2}
+        border
+        borderStyle="rounded"
+        borderColor="#2a324b"
+        title=" [1] Status "
+        titleColor="#64748b"
+      >
+        <box flexDirection="row" alignItems="center" gap={2}>
+          {isActive ? (
+            <text>
+              <span bg={theme.colors.activeBg} fg={theme.colors.active}>
+                <b> ● ACTIVE </b>
+              </span>
+            </text>
+          ) : (
+            <text>
+              <span bg={theme.colors.inactiveBg} fg={theme.colors.inactive}>
+                <b> ○ INACTIVE </b>
+              </span>
+            </text>
+          )}
+
+          <text>
+            <span fg={theme.colors.label}>Log: </span>
+            <span fg={log ? theme.colors.active : theme.colors.disabled}>
+              {log ? "● ON" : "○ OFF"}
+            </span>
+          </text>
+
+          <text>
+            <span fg={theme.colors.label}>Rules: </span>
+            <b fg={theme.colors.value}>{ruleCount}</b>
+          </text>
+        </box>
+      </box>
+    );
+  }
 
   return (
     <box
       flexDirection="column"
-      width="50%"
+      width="100%"
+      flexGrow={1}
       padding={1}
       border
       borderStyle="rounded"
@@ -66,7 +115,6 @@ const Status = ({
       title=" [1] Status "
       titleColor={theme.colors.title}
     >
-      {/* ── System Overview ──────────────────────────────── */}
       <box flexDirection="column" gap={0}>
         <box flexDirection="row" alignItems="center" gap={2}>
           <text>
