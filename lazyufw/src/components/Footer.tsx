@@ -2,6 +2,13 @@ export interface FooterProps {
   activePanel: number;
 }
 
+const PANEL_NAMES: Record<number, string> = {
+  1: "Status",
+  2: "Rules",
+  3: "Raw Output",
+  4: "Inspector",
+};
+
 const Footer = ({ activePanel }: FooterProps) => {
   return (
     <box
@@ -14,18 +21,27 @@ const Footer = ({ activePanel }: FooterProps) => {
       paddingRight={2}
       border
       borderStyle="rounded"
-      borderColor="#2a324b"
+      borderColor="#23283b"
+      backgroundColor="#12131a"
     >
-      <text fg="#94a3b8">
-        <span fg="#00e5ff"><b>[1-4]</b></span> Panels  <span fg="#00e5ff"><b>[Tab]</b></span> Next  <span fg="#00e5ff"><b>[↑/↓]</b></span> Select  <span fg="#00e5ff"><b>[a]</b></span> Add  <span fg="#00e5ff"><b>[d]</b></span> Del  <span fg="#00e5ff"><b>[e]</b></span> Enable  <span fg="#00e5ff"><b>[D]</b></span> Disable  <span fg="#00e5ff"><b>[q]</b></span> Quit
-      </text>
+      <box flexDirection="row" alignItems="center" gap={1}>
+        <text fg="#94a3b8">
+          <span fg="#00e5ff"><b>[1-4]</b></span> Panels  <span fg="#00e5ff"><b>[Tab]</b></span> Next  <span fg="#00e5ff"><b>[↑/↓]</b></span> Nav  <span fg="#00e5ff"><b>[a]</b></span> Add  <span fg="#00e5ff"><b>[d]</b></span> Del  <span fg="#00e5ff"><b>[P]</b></span> Apps  <span fg="#00e5ff"><b>[L]</b></span> Logs  <span fg="#00e5ff"><b>[o]</b></span> Sort  <span fg="#00e5ff"><b>[x]</b></span> Menu  <span fg="#00e5ff"><b>[q]</b></span> Quit
+        </text>
+      </box>
 
-      <text fg="#64748b">
-        Active Panel: <span fg="#00e5ff"><b>[{activePanel}]</b></span>
-      </text>
+      <box flexDirection="row" alignItems="center" gap={1}>
+        <text fg="#64748b">
+          Active:
+        </text>
+        <text>
+          <span bg="#1e293b" fg="#38bdf8">
+            <b> {`[${activePanel}] ${PANEL_NAMES[activePanel] || ""}`} </b>
+          </span>
+        </text>
+      </box>
     </box>
   );
 };
 
 export default Footer;
-

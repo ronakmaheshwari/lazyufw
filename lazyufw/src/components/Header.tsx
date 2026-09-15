@@ -1,22 +1,19 @@
 export type LogState = "Low" | "Medium" | "High" | "Off";
 
 interface HeaderProps {
-  title: string;
+  title?: string;
   status: string;
-  log: boolean;
+  log?: boolean;
   logState: LogState;
   rulesCount: number;
 }
 
 const Header = ({
-  title,
   status,
-  log,
   logState,
   rulesCount,
 }: HeaderProps) => {
-  const statusColor = status === "ACTIVE" ? "#00ff08" : "#fd1414";
-  const logColor = log ? "#00ff08" : "#fd1414";
+  const isActive = status.toUpperCase() === "ACTIVE";
 
   return (
     <box
@@ -24,49 +21,65 @@ const Header = ({
       alignItems="center"
       justifyContent="space-between"
       width="100%"
-      height={5}
+      height={4}
       paddingLeft={2}
       paddingRight={2}
       border
-      borderColor={"#01afc6"}
+      borderColor="#01afc6"
       borderStyle="rounded"
+      backgroundColor="#16161e"
     >
-      <box
-        flexDirection="column"
-        alignItems="flex-start"
-        justifyContent="center"
-      >
-        <ascii-font
-          id="title"
-          font="tiny"
-          text={title}
-          color={"#00ffea"}
-        />
-
-        <text>
-          Your laziest way to handle firewall
+      {/* Brand & Slogan */}
+      <box flexDirection="column" justifyContent="center">
+        <box flexDirection="row" alignItems="center" gap={1}>
+          <text fg="#00e5ff">
+            <b>⚡ LAZYUFW</b>
+          </text>
+          <text>
+            <span bg="#1e293b" fg="#38bdf8">
+              <b> v1.2.0 </b>
+            </span>
+          </text>
+        </box>
+        <text fg="#64748b">
+          TUI Manager for Uncomplicated Firewall
         </text>
       </box>
 
-      <box
-        flexDirection="row"
-        alignItems="center"
-        justifyContent="center"
-        gap={3}
-        flexGrow={1}
-      >
+      {/* Status Chips */}
+      <box flexDirection="row" alignItems="center" gap={2}>
+        {/* Status Badge */}
         <text>
-          | Status:{" "}
-          <span fg={statusColor}>{"● " + status}</span> |
+          {isActive ? (
+            <span bg="#143823" fg="#22c55e">
+              <b> ● ACTIVE </b>
+            </span>
+          ) : (
+            <span bg="#3b171c" fg="#ef4444">
+              <b> ○ INACTIVE </b>
+            </span>
+          )}
         </text>
 
+        {/* Logging Badge */}
         <text>
-          Logs:{" "}
-          <span fg={logColor}>{log ? "● ON" : "● OFF"} {`(${logState})`}</span> |
+          <span bg="#1e293b" fg="#38bdf8">
+            <b> 📋 LOGS: {logState.toUpperCase()} </b>
+          </span>
         </text>
 
+        {/* Rule Count Badge */}
         <text>
-          Rules: {rulesCount}
+          <span bg="#1e293b" fg="#f1f5f9">
+            <b> 🛡️ {rulesCount} RULES </b>
+          </span>
+        </text>
+
+        {/* SSH Protection Badge */}
+        <text>
+          <span bg="#2d1c3d" fg="#c084fc">
+            <b> 🔒 SSH SAFE </b>
+          </span>
         </text>
       </box>
     </box>

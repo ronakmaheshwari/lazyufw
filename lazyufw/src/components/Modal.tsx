@@ -3,9 +3,18 @@ import type React from "react";
 interface ModalBaseProps {
   title: string;
   children: React.ReactNode;
+  borderColor?: string;
+  titleColor?: string;
+  width?: number | "auto" | `${number}%`;
 }
 
-const ModalBase = ({ title, children }: ModalBaseProps) => {
+const ModalBase = ({
+  title,
+  children,
+  borderColor = "#01afc6",
+  titleColor = "#00e5ff",
+  width = 62,
+}: ModalBaseProps) => {
   return (
     <box
       position="absolute"
@@ -18,13 +27,13 @@ const ModalBase = ({ title, children }: ModalBaseProps) => {
       zIndex={100}
     >
       <box
-        width={62}
+        width={width}
         backgroundColor="#16161e"
         border
         borderStyle="rounded"
-        borderColor="#01afc6"
+        borderColor={borderColor}
         title={` ${title} `}
-        titleColor="#00e5ff"
+        titleColor={titleColor}
         padding={1}
         paddingLeft={2}
         paddingRight={2}

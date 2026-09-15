@@ -5,13 +5,21 @@ export interface RulesPanelProps {
   rules: RuleCellProp[];
   active?: boolean;
   selectedIndex?: number;
+  sortMode?: string;
+  filterQuery?: string;
 }
 
 const RulesPanel = ({
   rules,
   active = true,
   selectedIndex = 0,
+  sortMode = "id",
+  filterQuery,
 }: RulesPanelProps) => {
+  const sortBadge = sortMode !== "id" ? ` [sort: ${sortMode.toUpperCase()}]` : "";
+  const filterBadge = filterQuery ? ` [filter: "${filterQuery}"]` : "";
+  const titleStr = ` [2] Rules (${rules.length})${sortBadge}${filterBadge} `;
+
   if (!active) {
     return (
       <box
@@ -23,9 +31,10 @@ const RulesPanel = ({
         paddingRight={2}
         border
         borderStyle="rounded"
-        borderColor="#2a324b"
+        borderColor="#23283b"
         title=" [2] Rules "
         titleColor="#64748b"
+        backgroundColor="#16161e"
       >
         <text>
           <span fg="#7982a9">Rules: </span>
@@ -45,35 +54,48 @@ const RulesPanel = ({
       border
       borderStyle="rounded"
       borderColor="#01afc6"
-      title=" [2] Rules "
+      title={titleStr}
       titleColor="#00e5ff"
+      backgroundColor="#16161e"
     >
       {/* Table Column Headers */}
-      <box flexDirection="row" alignItems="center" height={1} marginBottom={1}>
+      <box
+        flexDirection="row"
+        alignItems="center"
+        height={1}
+        marginBottom={1}
+        paddingBottom={0}
+      >
         <box width={6}>
-          <text fg="#64748b">  #</text>
+          <text fg="#7982a9"><b>  #</b></text>
         </box>
         <box width={4}>
-          <text fg="#64748b">DIR</text>
+          <text fg="#7982a9"><b>DIR</b></text>
         </box>
         <box width={14}>
-          <text fg="#64748b">TARGET</text>
+          <text fg="#7982a9"><b>TARGET</b></text>
         </box>
         <box width={11}>
-          <text fg="#64748b">ACTION</text>
+          <text fg="#7982a9"><b>ACTION</b></text>
         </box>
         <box width={16}>
-          <text fg="#64748b">FROM</text>
+          <text fg="#7982a9"><b>FROM</b></text>
         </box>
         <box flexGrow={1}>
-          <text fg="#64748b">COMMENT</text>
+          <text fg="#7982a9"><b>COMMENT</b></text>
         </box>
       </box>
 
       {/* Rules List */}
       <box flexDirection="column" gap={0} flexGrow={1}>
         {rules.length === 0 ? (
-          <text fg="#64748b">No firewall rules found. Press 'a' to add one.</text>
+          <box padding={1} flexDirection="column">
+            <text fg="#64748b">
+              {filterQuery
+                ? `No firewall rules match "${filterQuery}". Press '/' to search again.`
+                : "No firewall rules found. Press 'a' to add one or 'P' for App Profiles."}
+            </text>
+          </box>
         ) : (
           rules.map((r, i) => (
             <RuleCell
@@ -89,4 +111,3 @@ const RulesPanel = ({
 };
 
 export default RulesPanel;
-

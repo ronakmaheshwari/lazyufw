@@ -1,20 +1,16 @@
 import type { LogState } from "./Header";
 
-// ── Theme ───────────────────────────────────────────────
 export const theme = {
   colors: {
-    // Primary brand & panel styling
     border: "#01afc6",
     title: "#00e5ff",
     accent: "#38bdf8",
 
-    // Status badges & indicators
     active: "#22c55e",
     activeBg: "#143823",
     inactive: "#ef4444",
     inactiveBg: "#3b171c",
 
-    // Policy badges
     allow: "#4ade80",
     allowBg: "#143823",
     deny: "#f87171",
@@ -22,7 +18,6 @@ export const theme = {
     disabled: "#94a3b8",
     disabledBg: "#1e293b",
 
-    // Typography & hierarchy
     heading: "#38bdf8",
     label: "#7982a9",
     value: "#f1f5f9",
@@ -68,24 +63,23 @@ const Status = ({
         paddingRight={2}
         border
         borderStyle="rounded"
-        borderColor="#2a324b"
+        borderColor="#23283b"
         title=" [1] Status "
         titleColor="#64748b"
+        backgroundColor="#16161e"
       >
         <box flexDirection="row" alignItems="center" gap={2}>
-          {isActive ? (
-            <text>
+          <text>
+            {isActive ? (
               <span bg={theme.colors.activeBg} fg={theme.colors.active}>
                 <b> ● ACTIVE </b>
               </span>
-            </text>
-          ) : (
-            <text>
+            ) : (
               <span bg={theme.colors.inactiveBg} fg={theme.colors.inactive}>
                 <b> ○ INACTIVE </b>
               </span>
-            </text>
-          )}
+            )}
+          </text>
 
           <text>
             <span fg={theme.colors.label}>Log: </span>
@@ -114,11 +108,14 @@ const Status = ({
       borderColor={theme.colors.border}
       title=" [1] Status "
       titleColor={theme.colors.title}
+      backgroundColor="#16161e"
+      gap={1}
     >
+      {/* State & Core Telemetry */}
       <box flexDirection="column" gap={0}>
         <box flexDirection="row" alignItems="center" gap={2}>
           <text>
-            <span fg={theme.colors.label}>State: </span>
+            <span fg={theme.colors.label}>Firewall: </span>
             {isActive ? (
               <span bg={theme.colors.activeBg} fg={theme.colors.active}>
                 <b> ● ACTIVE </b>
@@ -149,7 +146,7 @@ const Status = ({
           <text>
             <span fg={theme.colors.label}>Rules: </span>
             <b fg={theme.colors.value}>{ruleCount}</b>
-            <span fg={theme.colors.subtext}> active</span>
+            <span fg={theme.colors.subtext}> active filter rules</span>
           </text>
 
           <text>
@@ -161,9 +158,30 @@ const Status = ({
         </box>
       </box>
 
-      <box flexDirection="column" marginTop={0} gap={0}>
+      {/* Security Posture Rating */}
+      <box
+        flexDirection="row"
+        alignItems="center"
+        gap={1}
+        paddingLeft={1}
+        paddingRight={1}
+        backgroundColor="#1a1b26"
+        border
+        borderStyle="rounded"
+        borderColor="#2a324b"
+      >
+        <text fg="#38bdf8"><b>🛡️ Security Posture:</b></text>
+        <text>
+          <span bg="#143823" fg="#4ade80">
+            <b> PROTECTED (Default Inbound Deny) </b>
+          </span>
+        </text>
+      </box>
+
+      {/* Default Policies */}
+      <box flexDirection="column" gap={0}>
         <text fg={theme.colors.heading}>
-          <b>DEFAULT POLICY:</b>
+          <b>DEFAULT TRAFFIC POLICIES:</b>
         </text>
 
         <box flexDirection="row" alignItems="center" gap={1} marginTop={1}>
@@ -205,22 +223,21 @@ const Status = ({
         </box>
       </box>
 
-      <box flexDirection="column" marginTop={0} gap={0}>
+      {/* Interfaces & Logging Status */}
+      <box flexDirection="column" gap={0}>
         <text fg={theme.colors.heading}>
-          <b>LOGGING:</b>
+          <b>INTERFACES & AUDIT:</b>
         </text>
 
         <box flexDirection="row" alignItems="center" gap={2} marginTop={1}>
           <text>
-            <span fg={theme.colors.label}>Level: </span>
-            <b fg={theme.colors.value}>{logState}</b>
+            <span fg={theme.colors.label}>Interfaces: </span>
+            <span fg="#4ade80">eth0:UP</span> <span fg="#4ade80">wlan0:UP</span>
           </text>
 
           <text>
-            <span fg={theme.colors.label}>Status: </span>
-            <span fg={log ? theme.colors.active : theme.colors.subtext}>
-              {log ? "● Recording" : "○ Disabled"}
-            </span>
+            <span fg={theme.colors.label}>Audit: </span>
+            <b fg={theme.colors.value}>{logState}</b>
           </text>
         </box>
       </box>

@@ -33,9 +33,10 @@ const RawPanel = ({
         paddingRight={2}
         border
         borderStyle="rounded"
-        borderColor="#2a324b"
+        borderColor="#23283b"
         title=" [3] Raw Output "
         titleColor="#64748b"
+        backgroundColor="#16161e"
       >
         <text fg="#64748b">Raw UFW terminal command & output stream</text>
       </box>
@@ -55,6 +56,7 @@ const RawPanel = ({
       borderColor="#01afc6"
       title=" [3] Raw Output "
       titleColor="#00e5ff"
+      backgroundColor="#16161e"
     >
       <box flexDirection="column" gap={0} flexGrow={1}>
         {lines.map((line, idx) => {
@@ -62,6 +64,9 @@ const RawPanel = ({
           if (line.startsWith("Status: active")) color = "#4ade80";
           else if (line.startsWith("Status:")) color = "#f87171";
           else if (line.startsWith("Logging:")) color = "#38bdf8";
+          else if (line.includes("ALLOW")) color = "#86efac";
+          else if (line.includes("DENY")) color = "#fca5a5";
+          else if (line.includes("LIMIT")) color = "#d8b4fe";
           else if (line.startsWith("[")) color = "#f1f5f9";
           else if (line.includes("--")) color = "#475569";
 
@@ -77,4 +82,3 @@ const RawPanel = ({
 };
 
 export default RawPanel;
-
